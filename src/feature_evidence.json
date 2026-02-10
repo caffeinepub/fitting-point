@@ -1,0 +1,92 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-redesign-the-storefront-homepage-ui-to-match-the-structure-layout-and-user-facing-behavior-of-https-www-vnscollection-com-as-closely-as-possible-within-the-existing-app-s-navigation-model-home-catalog-product-etc",
+      "featureTitle": "Redesign the storefront homepage UI to match the structure, layout, and user-facing behavior of https://www.vnscollection.com/ as closely as possible, within the existing app’s navigation model (Home/Catalog/Product/etc.).",
+      "files": [
+        "frontend/src/components/home/HomepageBannerRail.tsx",
+        "frontend/src/components/home/HomepageSectionRenderer.tsx",
+        "frontend/src/pages/HomePage.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-support-for-multiple-full-length-full-width-homepage-banners-that-are-rendered-on-the-homepage-and-are-editable-from-the-admin-panel-upload-replace-remove-banner-image-edit-banner-text-fields-configure-an-optional-click-through-destination",
+      "featureTitle": "Add support for multiple full-length (full-width) homepage banners that are rendered on the homepage and are editable from the admin panel (upload/replace/remove banner image; edit banner text fields; configure an optional click-through destination).",
+      "files": [
+        "frontend/src/hooks/useHomepageBanners.ts",
+        "frontend/src/pages/HomePage.tsx",
+        "frontend/src/utils/bannerDestination.ts",
+        "frontend/src/utils/bannerEncoding.ts"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-remove-or-replace-existing-homepage-elements-that-do-not-match-the-reference-homepage-structure-and-ensure-the-homepage-does-not-rely-on-hardcoded-category-tiles-hardcoded-images-or-hardcoded-marketing-copy-for-sections-intended-to-mirror-the-reference-site",
+      "featureTitle": "Remove or replace existing homepage elements that do not match the reference homepage structure, and ensure the homepage does not rely on hardcoded category tiles, hardcoded images, or hardcoded marketing copy for sections intended to mirror the reference site.",
+      "files": [
+        "frontend/src/pages/HomePage.tsx",
+        "frontend/src/utils/siteContentDefaults.ts"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-admin-site-settings-ui-to-include-a-dedicated-management-interface-for-the-homepage-banners-list-view-add-edit-controls-using-the-existing-mediaslotuploader-for-banner-image-uploads",
+      "featureTitle": "Update the Admin Site Settings UI to include a dedicated management interface for the homepage banners (list view + add/edit controls), using the existing MediaSlotUploader for banner image uploads.",
+      "files": [
+        "frontend/src/components/admin/HomepageBannersManager.tsx",
+        "frontend/src/pages/admin/AdminSiteSettings.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

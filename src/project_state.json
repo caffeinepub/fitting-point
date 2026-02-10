@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "Build an e-commerce site with an admin panel; homepage should be redesigned to match the structure, layout, and functions of https://www.vnscollection.com/ as closely as possible, including editable full-length banners and removal of unnecessary homepage elements.",
+  "architectural_notes": [
+    "Homepage redesign should reference https://www.vnscollection.com/ for structure/layout/function parity."
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-redesign-the-storefront-homepage-ui-to-match-the-structure-layout-and-user-facing-behavior-of-https-www-vnscollection-com-as-closely-as-possible-within-the-existing-app-s-navigation-model-home-catalog-product-etc",
+      "title": "Redesign the storefront homepage UI to match the structure, layout, and user-facing behavior of https://www.vnscollection.com/ as closely as possible, within the existing app’s navigation model (Home/Catalog/Product/etc.).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-support-for-multiple-full-length-full-width-homepage-banners-that-are-rendered-on-the-homepage-and-are-editable-from-the-admin-panel-upload-replace-remove-banner-image-edit-banner-text-fields-configure-an-optional-click-through-destination",
+      "title": "Add support for multiple full-length (full-width) homepage banners that are rendered on the homepage and are editable from the admin panel (upload/replace/remove banner image; edit banner text fields; configure an optional click-through destination).",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-remove-or-replace-existing-homepage-elements-that-do-not-match-the-reference-homepage-structure-and-ensure-the-homepage-does-not-rely-on-hardcoded-category-tiles-hardcoded-images-or-hardcoded-marketing-copy-for-sections-intended-to-mirror-the-reference-site",
+      "title": "Remove or replace existing homepage elements that do not match the reference homepage structure, and ensure the homepage does not rely on hardcoded category tiles, hardcoded images, or hardcoded marketing copy for sections intended to mirror the reference site.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-admin-site-settings-ui-to-include-a-dedicated-management-interface-for-the-homepage-banners-list-view-add-edit-controls-using-the-existing-mediaslotuploader-for-banner-image-uploads",
+      "title": "Update the Admin Site Settings UI to include a dedicated management interface for the homepage banners (list view + add/edit controls), using the existing MediaSlotUploader for banner image uploads.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Redesign homepage sections/layout to match vnscollection.com as closely as possible (same-to-same design and functions)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Add full-length homepage banners editable via the admin panel",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Remove unnecessary elements/sections from the homepage during redesign",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Extend backend site content management to support admin persistence for homepage banner data (and any redesigned homepage sections that must be editable), including authorization checks consistent with existing admin-only site content operations.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    }
+  ],
+  "projectName": "Redesign homepage to match vnscollection.com with admin-editable full-length banners",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

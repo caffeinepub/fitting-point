@@ -1,0 +1,52 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-10T13:27:11.199Z",
+  "summary": "Diff adds a banner data model, admin UI, and frontend banner carousel/hooks, but backend CRUD/authorization for banner persistence is not evidenced in the provided backend diff. Homepage still contains hardcoded homepage marketing copy and a category-tile grid (now product-derived) that may conflict with the requirement to avoid hardcoded marketing/copy for reference-like sections.",
+  "missing_requirements": [
+    {
+      "id": "REQ-4",
+      "requirement": "Extend backend site content management to support admin persistence for homepage banner data with admin-only upsert/update/delete methods, and make banners publicly retrievable as part of site content used by the homepage.",
+      "reason": "Although Banner and siteContent.banners types/migration are added, the diff summary does not show any backend methods (e.g., getBanners/addBanner/updateBanner/deleteBanner) nor admin authorization checks for those operations.",
+      "evidence": [
+        "backend/main.mo",
+        "backend/migration.mo",
+        "frontend/src/hooks/useHomepageBanners.ts"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Admin can upload/replace/remove banner image per banner (in addition to create/edit/delete banners).",
+      "reason": "HomepageBannersManager enforces an image on save (`if (!formData.image) ...`), and while delete removes the whole banner, the diff does not evidence a way to remove/clear only the banner image while keeping the banner entry.",
+      "evidence": [
+        "frontend/src/components/admin/HomepageBannersManager.tsx"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "requirement": "Ensure redesigned homepage does not rely on hardcoded category tiles, hardcoded images, or hardcoded marketing copy for sections intended to mirror the reference homepage structure; remaining sections should be data-driven from site content state.",
+      "reason": "Homepage still includes a dedicated category tile grid section (tiles built from product categories) and contains hardcoded user-facing marketing copy such as \"Shop by Category\" and \"Explore our carefully selected pilgrimage essentials\"; section CTA text \"Learn More About Us\" is also hardcoded.",
+      "evidence": [
+        "frontend/src/pages/HomePage.tsx",
+        "frontend/src/components/home/HomepageSectionRenderer.tsx"
+      ]
+    }
+  ],
+  "hallucinated_features": [],
+  "confidence": 0.62,
+  "changed_files": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/components/admin/HomepageBannersManager.tsx",
+    "frontend/src/components/home/HomepageBannerRail.tsx",
+    "frontend/src/components/home/HomepageSectionRenderer.tsx",
+    "frontend/src/hooks/useHomepageBanners.ts",
+    "frontend/src/pages/HomePage.tsx",
+    "frontend/src/pages/admin/AdminSiteSettings.tsx",
+    "frontend/src/utils/bannerDestination.ts",
+    "frontend/src/utils/bannerEncoding.ts",
+    "frontend/src/utils/siteContentDefaults.ts",
+    "project_state.json"
+  ]
+}
