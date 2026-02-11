@@ -178,31 +178,56 @@ export function useDeleteProduct() {
   });
 }
 
-// Admin - Access Control
+// Admin - Authorization
 export function useIsCallerAdmin() {
-  const { actor, isFetching } = useActor();
+  const { actor, isFetching: actorFetching } = useActor();
 
-  return useQuery<boolean>({
+  const query = useQuery<boolean>({
     queryKey: ['isAdmin'],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isCallerAdmin();
     },
-    enabled: !!actor && !isFetching,
+    enabled: !!actor && !actorFetching,
+    retry: false,
   });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+    isFetched: !!actor && query.isFetched,
+  };
 }
 
-export function useAssignUserRole() {
+export function useUnlockBootstrapAdmin() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ user, role }: { user: Principal; role: any }) => {
+    mutationFn: async ({ adminToken, userProvidedToken }: { adminToken: string; userProvidedToken: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.assignCallerUserRole(user, role);
+      return actor.unlockBootstrapAdminPrivileges(adminToken, userProvidedToken);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
+    },
+  });
+}
+
+// Admin - Email/Password Login
+export function useAdminEmailPasswordLogin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.authenticateAdminWithEmailPassword(email, password);
+    },
+    onSuccess: async () => {
+      // Invalidate and refetch isAdmin to update access control state
+      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
+      await queryClient.refetchQueries({ queryKey: ['isAdmin'] });
     },
   });
 }
@@ -243,7 +268,20 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-// Site Content - Save Draft
+// Site Content
+export function useGetSiteContent() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery({
+    queryKey: ['siteContent'],
+    queryFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.getSiteContent();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useSaveDraft() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -252,6 +290,36 @@ export function useSaveDraft() {
     mutationFn: async ({ content, isHeroText }: { content: string; isHeroText: boolean }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.saveDraft(content, isHeroText);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['siteContent'] });
+    },
+  });
+}
+
+export function usePublishSiteContent() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.publishSiteContent();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['siteContent'] });
+    },
+  });
+}
+
+export function useToggleDarkMode() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (enabled: boolean) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.toggleDarkMode(enabled);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['siteContent'] });

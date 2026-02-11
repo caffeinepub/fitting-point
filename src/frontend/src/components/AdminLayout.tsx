@@ -1,8 +1,13 @@
-import { Shield, Package, Image, FolderTree, Users, ArrowLeft, Settings } from 'lucide-react';
+import { Shield, Package, Image, FolderTree, Users, ArrowLeft, Settings, Copy, Check, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useIsCallerAdmin } from '../hooks/useQueries';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useIsCallerAdmin, useAdminEmailPasswordLogin } from '../hooks/useQueries';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { parseAdminAuthError } from '../utils/adminAuthError';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings';
 
@@ -14,13 +19,56 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, currentPage, onNavigate, title }: AdminLayoutProps) {
-  const { data: isAdmin = false, isLoading } = useIsCallerAdmin();
-  const { identity } = useInternetIdentity();
+  const { data: isAdmin = false, isLoading, isFetched } = useIsCallerAdmin();
+  const { identity, isInitializing } = useInternetIdentity();
+  const emailPasswordLogin = useAdminEmailPasswordLogin();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // Use official static logo asset
   const logoSrc = '/assets/ChatGPT Image Dec 11, 2025, 10_50_00 PM-3.png';
 
-  if (isLoading) {
+  const principalId = identity?.getPrincipal().toString() || '';
+
+  const handleCopyPrincipal = () => {
+    navigator.clipboard.writeText(principalId);
+    setCopied(true);
+    toast.success('Principal ID copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleEmailPasswordLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      toast.error('Please enter both email and password');
+      return;
+    }
+
+    try {
+      await emailPasswordLogin.mutateAsync({ email, password });
+      toast.success('Admin access granted! Welcome back.');
+      // Navigate to admin dashboard after successful login
+      setTimeout(() => {
+        onNavigate('admin');
+      }, 500);
+    } catch (error: any) {
+      console.error('Email/password login error:', error);
+      
+      // Parse the error to show appropriate message
+      const parsedError = parseAdminAuthError(error);
+      
+      if (parsedError.type === 'invalid_credentials') {
+        toast.error(parsedError.message);
+      } else {
+        toast.error(parsedError.message);
+      }
+    }
+  };
+
+  const profileLoading = isLoading || isInitializing;
+
+  if (profileLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -37,7 +85,9 @@ export default function AdminLayout({ children, currentPage, onNavigate, title }
         <Card className="p-8 max-w-md text-center space-y-4">
           <Shield className="h-16 w-16 text-gold mx-auto" />
           <h2 className="font-serif text-2xl text-gold">Authentication Required</h2>
-          <p className="text-muted-foreground">Please log in to access the admin panel.</p>
+          <p className="text-muted-foreground">
+            You must log in with Internet Identity before accessing the admin panel.
+          </p>
           <Button onClick={() => onNavigate('home')} className="bg-gold hover:bg-gold/90 text-white">
             Return to Home
           </Button>
@@ -46,77 +96,174 @@ export default function AdminLayout({ children, currentPage, onNavigate, title }
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && isFetched) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted/30">
-        <Card className="p-8 max-w-md text-center space-y-4">
-          <Shield className="h-16 w-16 text-destructive mx-auto" />
-          <h2 className="font-serif text-2xl text-gold">Access Denied</h2>
-          <p className="text-muted-foreground">You do not have permission to access the admin panel.</p>
-          <Button onClick={() => onNavigate('home')} className="bg-gold hover:bg-gold/90 text-white">
-            Return to Home
-          </Button>
+      <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+        <Card className="p-8 max-w-lg w-full space-y-6">
+          <div className="text-center space-y-4">
+            <Shield className="h-16 w-16 text-destructive mx-auto" />
+            <h2 className="font-serif text-2xl text-gold">Admin Login</h2>
+            <p className="text-muted-foreground">Enter your admin credentials to continue.</p>
+          </div>
+
+          {/* Email + Password Login */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Admin Login</Label>
+              <p className="text-xs text-muted-foreground">
+                Log in with your admin email and password.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={emailPasswordLogin.isPending}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleEmailPasswordLogin();
+                    }
+                  }}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={emailPasswordLogin.isPending}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleEmailPasswordLogin();
+                    }
+                  }}
+                />
+              </div>
+
+              <Button
+                onClick={handleEmailPasswordLogin}
+                disabled={emailPasswordLogin.isPending || !email.trim() || !password.trim()}
+                className="w-full bg-gold hover:bg-gold/90 text-white"
+              >
+                {emailPasswordLogin.isPending ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Logging in...
+                  </>
+                ) : (
+                  'Login'
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Principal ID Display */}
+          <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Your Principal ID</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={principalId}
+                  readOnly
+                  className="font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCopyPrincipal}
+                  className="shrink-0"
+                >
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Share this ID with an existing admin to request access.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <Button
+              onClick={() => onNavigate('home')}
+              variant="ghost"
+              className="w-full"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Return to Home
+            </Button>
+          </div>
         </Card>
       </div>
     );
   }
 
-  const menuItems = [
-    { label: 'Dashboard', page: 'admin' as Page, icon: Shield },
-    { label: 'Products', page: 'admin-products' as Page, icon: Package },
-    { label: 'Lookbook', page: 'admin-lookbook' as Page, icon: Image },
-    { label: 'Categories', page: 'admin-categories' as Page, icon: FolderTree },
-    { label: 'User Sessions', page: 'admin-sessions' as Page, icon: Users },
-    { label: 'Site Settings', page: 'admin-site-settings' as Page, icon: Settings },
+  // Admin is authenticated - show admin layout
+  const navItems = [
+    { page: 'admin' as Page, icon: Shield, label: 'Dashboard' },
+    { page: 'admin-products' as Page, icon: Package, label: 'Products' },
+    { page: 'admin-lookbook' as Page, icon: Image, label: 'Lookbook' },
+    { page: 'admin-categories' as Page, icon: FolderTree, label: 'Categories' },
+    { page: 'admin-sessions' as Page, icon: Users, label: 'Sessions' },
+    { page: 'admin-site-settings' as Page, icon: Settings, label: 'Site Settings' },
   ];
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Admin Header */}
-      <header className="bg-background border-b border-gold/20 sticky top-0 z-40">
-        <div className="w-full px-4 lg:px-8 xl:px-12 2xl:px-16 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <img
-                src={logoSrc}
-                alt="Fitting Point"
-                className="h-12 w-12 object-contain rounded-full"
-              />
-              <div>
-                <h1 className="font-serif text-2xl text-gold">Admin Panel</h1>
-                <p className="text-sm text-muted-foreground">{title}</p>
-              </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between px-4">
+          <div className="flex items-center gap-4">
+            <img src={logoSrc} alt="Fitting Point" className="h-10 w-auto" />
+            <div className="hidden md:block">
+              <h1 className="font-serif text-xl text-gold">{title}</h1>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => onNavigate('home')}
-              className="border-gold text-gold hover:bg-gold hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Store
-            </Button>
           </div>
+          <Button
+            onClick={() => onNavigate('home')}
+            variant="outline"
+            size="sm"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Exit Admin
+          </Button>
         </div>
       </header>
 
-      <div className="flex">
+      <div className="container flex gap-6 px-4 py-6">
         {/* Sidebar */}
-        <aside className="hidden lg:block w-64 bg-background border-r border-gold/20 min-h-[calc(100vh-73px)] sticky top-[73px]">
-          <nav className="p-4 space-y-2">
-            {menuItems.map((item) => {
+        <aside className="hidden lg:block w-64 shrink-0">
+          <nav className="space-y-2 sticky top-24">
+            {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive = currentPage === item.page;
               return (
                 <button
                   key={item.page}
                   onClick={() => onNavigate(item.page)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                    currentPage === item.page
-                      ? 'bg-gold/10 text-gold border border-gold/30'
-                      : 'text-foreground hover:bg-gold/5 hover:text-gold'
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-gold text-white'
+                      : 'hover:bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   <Icon className="h-5 w-5" />
-                  <span className="font-serif">{item.label}</span>
+                  <span className="font-medium">{item.label}</span>
                 </button>
               );
             })}
@@ -124,7 +271,7 @@ export default function AdminLayout({ children, currentPage, onNavigate, title }
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 min-w-0">
           {children}
         </main>
       </div>

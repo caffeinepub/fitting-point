@@ -1,113 +1,55 @@
 {
   "kind": "build_request",
-  "title": "Redesign homepage to match vnscollection.com with admin-editable full-length banners",
-  "priority": "normal",
+  "title": "Fix admin email/password login by hardcoding first admin credentials and removing broken token bootstrap UI",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Redesign the storefront homepage UI to match the structure, layout, and user-facing behavior of https://www.vnscollection.com/ as closely as possible, within the existing app’s navigation model (Home/Catalog/Product/etc.).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "https://www.vnscollection.com/",
-          "plkease make each section similar to the reference site, we willlater on update it",
-          "nothing more just same to same designing and functions"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Homepage visual layout is substantially reworked to resemble the reference site’s section ordering and spacing (full-width sections where appropriate, responsive behavior included).",
-        "Homepage CTAs and interactions navigate using the existing onNavigate callback (e.g., to catalog/category, product detail) without introducing new routing infrastructure.",
-        "All user-facing text on the redesigned homepage is in English."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Add support for multiple full-length (full-width) homepage banners that are rendered on the homepage and are editable from the admin panel (upload/replace/remove banner image; edit banner text fields; configure an optional click-through destination).",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "also remove unnecssary things and add fulllength banners whichalsocan beeditable in admin panel",
-          "nothing more just same to same designing and functions"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin can create, edit, and delete multiple homepage banners.",
-        "Each banner supports an uploaded image and editable text fields (at minimum: title/heading and optional subheading) and an optional destination (internal navigation and/or external URL).",
-        "Homepage displays the configured banners as full-width banners and gracefully falls back when no banners exist (no runtime errors).",
-        "Banner changes made in admin persist across refreshes (stored in the canister state)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Remove or replace existing homepage elements that do not match the reference homepage structure, and ensure the homepage does not rely on hardcoded category tiles, hardcoded images, or hardcoded marketing copy for sections intended to mirror the reference site.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "homepage changes as i requested? also remove unnecssary things"
-        ]
-      },
-      "acceptanceCriteria": [
-        "The current hardcoded homepage category list and any non-reference marketing blocks are removed or reworked to align with the new reference-like homepage structure.",
-        "Homepage sections that remain are data-driven (banner list and other editable homepage sections should come from site content state rather than hardcoded arrays/strings).",
-        "No broken images or placeholder-only sections remain visible by default on production builds."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Extend backend site content management to support admin persistence for homepage banner data (and any redesigned homepage sections that must be editable), including authorization checks consistent with existing admin-only site content operations.",
+      "text": "Update the backend admin credentials to match the provided first admin account so that email/password login succeeds immediately: set `adminEmail` to `fitting.point.official@gmail.com` and `adminPassword` to `Farhan@456`, and ensure `authenticateAdminWithEmailPassword(email, password)` grants the caller the `#admin` role when those credentials match.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "add fulllength banners whichalsocan beeditable in admin panel"
+          "fitting.point.official@gmail.com\nFarhan@456",
+          "YES"
         ]
       },
       "acceptanceCriteria": [
-        "Backend exposes admin-only methods to upsert/update/delete the stored homepage banner entries (including associated uploaded image blob references) and to retrieve them as part of site content used by the homepage.",
-        "Non-admin callers cannot modify homepage banner data (backend traps/denies consistently with existing admin-only checks).",
-        "Existing site content query remains publicly readable for storefront rendering."
+        "Backend `adminEmail` equals `fitting.point.official@gmail.com` and `adminPassword` equals `Farhan@456` after deployment.",
+        "Calling `authenticateAdminWithEmailPassword(\"fitting.point.official@gmail.com\",\"Farhan@456\")` succeeds and assigns the caller admin role (so subsequent `isCallerAdmin()` returns `true` for that caller).",
+        "Calling `authenticateAdminWithEmailPassword` with an incorrect email and/or password traps with an error message that the frontend classifies as invalid credentials (e.g., includes \"Authentication failed\" or similar)."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Update the Admin Site Settings UI to include a dedicated management interface for the homepage banners (list view + add/edit controls), using the existing MediaSlotUploader for banner image uploads.",
+      "id": "REQ-2",
+      "text": "In the admin login screen UI, remove or disable the token-based \"First-Time Setup\" / \"Grant Admin Access\" bootstrap section since it is currently failing and the intended flow is direct email + password login; keep the email/password login form as the only admin access path presented to users.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "add fulllength banners whichalsocan beeditable in admin panel"
+          "And the **Grant Admin Access** form is also failing because the tokens no longer match the updated version of the app after removing Internet Identity.",
+          "No tokens. No Internet Identity. No bootstrap. Just straight email + password."
         ]
       },
       "acceptanceCriteria": [
-        "Admin Site Settings includes a clearly labeled section (e.g., \"Homepage Banners\") with a banner list and controls to add/edit/remove banners.",
-        "Each banner row/editor supports image upload via the existing MediaSlotUploader and text/destination inputs.",
-        "Saving banner changes updates the storefront homepage after data refetch (React Query invalidation) without requiring a full page reload."
+        "On the /admin login screen, users no longer see inputs/buttons for \"Admin Token\", \"User Token\", or \"Grant Admin Access\".",
+        "The email/password login form remains visible and functional, and on success navigates to the admin dashboard (existing behavior in `AdminLayout.tsx`)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit files under frontend/src/components/ui (compose them only).",
-    "Do not edit immutable frontend hook entrypoints listed in SYSTEM_CONTEXT (compose or add new hooks/components instead).",
-    "Keep all user-facing text in English."
+    "Backend changes must remain within the existing single-actor Motoko architecture (`backend/main.mo`).",
+    "Do not edit files under `frontend/src/hooks/useInternetIdentity.ts(x)`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, or any files in `frontend/src/components/ui` (immutable paths).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Do not implement payment processing or non-WhatsApp checkout flows.",
-    "Do not add third-party authentication providers (Internet Identity only).",
-    "Do not rebuild non-home pages to match the reference site unless required for homepage navigation to work."
+    "Implementing a multi-admin management system (create/delete multiple admins).",
+    "Adding password reset, email verification, or any external authentication provider.",
+    "Changing the overall storefront/checkout behavior."
   ],
   "imageRequirements": {
     "required": [],

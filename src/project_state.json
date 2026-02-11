@@ -1,42 +1,22 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build an e-commerce site with an admin panel; homepage should be redesigned to match the structure, layout, and functions of https://www.vnscollection.com/ as closely as possible, including editable full-length banners and removal of unnecessary homepage elements.",
+  "summary": "Admin login is failing after removing Internet Identity; system now uses email+password but lacks a working initial admin bootstrap/creation path (tokens no longer match), requiring a backend change to create the first admin account.",
   "architectural_notes": [
-    "Homepage redesign should reference https://www.vnscollection.com/ for structure/layout/function parity."
+    "Internet Identity was removed; authentication is now intended to be email + password.",
+    "Current 'Grant Admin Access' / initialization token bootstrap mechanism appears incompatible with the updated build (token mismatch)."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "Admin login returns 'Invalid email or password' because no admin account exists in the database yet.",
+    "'Grant Admin Access' token-based bootstrap is failing due to tokens not matching the updated version after Internet Identity removal."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-redesign-the-storefront-homepage-ui-to-match-the-structure-layout-and-user-facing-behavior-of-https-www-vnscollection-com-as-closely-as-possible-within-the-existing-app-s-navigation-model-home-catalog-product-etc",
-      "title": "Redesign the storefront homepage UI to match the structure, layout, and user-facing behavior of https://www.vnscollection.com/ as closely as possible, within the existing app’s navigation model (Home/Catalog/Product/etc.).",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-support-for-multiple-full-length-full-width-homepage-banners-that-are-rendered-on-the-homepage-and-are-editable-from-the-admin-panel-upload-replace-remove-banner-image-edit-banner-text-fields-configure-an-optional-click-through-destination",
-      "title": "Add support for multiple full-length (full-width) homepage banners that are rendered on the homepage and are editable from the admin panel (upload/replace/remove banner image; edit banner text fields; configure an optional click-through destination).",
+      "id": "feature-in-the-admin-login-screen-ui-remove-or-disable-the-token-based-first-time-setup-grant-admin-access-bootstrap-section-since-it-is-currently-failing-and-the-intended-flow-is-direct-email-password-login-keep-the-email-password-login-form-as-the-only-admin-access-path-presented-to-users",
+      "title": "In the admin login screen UI, remove or disable the token-based \"First-Time Setup\" / \"Grant Admin Access\" bootstrap section since it is currently failing and the intended flow is direct email + password login; keep the email/password login form as the only admin access path presented to users.",
       "reqIds": [
         "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-remove-or-replace-existing-homepage-elements-that-do-not-match-the-reference-homepage-structure-and-ensure-the-homepage-does-not-rely-on-hardcoded-category-tiles-hardcoded-images-or-hardcoded-marketing-copy-for-sections-intended-to-mirror-the-reference-site",
-      "title": "Remove or replace existing homepage elements that do not match the reference homepage structure, and ensure the homepage does not rely on hardcoded category tiles, hardcoded images, or hardcoded marketing copy for sections intended to mirror the reference site.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-admin-site-settings-ui-to-include-a-dedicated-management-interface-for-the-homepage-banners-list-view-add-edit-controls-using-the-existing-mediaslotuploader-for-banner-image-uploads",
-      "title": "Update the Admin Site Settings UI to include a dedicated management interface for the homepage banners (list view + add/edit controls), using the existing MediaSlotUploader for banner image uploads.",
-      "reqIds": [
-        "REQ-5"
       ],
       "version": 1
     }
@@ -44,32 +24,20 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Redesign homepage sections/layout to match vnscollection.com as closely as possible (same-to-same design and functions)",
+      "summary": "Implement a reliable initial admin creation/bootstrap flow for email+password login (no outdated tokens), so first admin can be created and log in successfully.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add full-length homepage banners editable via the admin panel",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Remove unnecessary elements/sections from the homepage during redesign",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Extend backend site content management to support admin persistence for homepage banner data (and any redesigned homepage sections that must be editable), including authorization checks consistent with existing admin-only site content operations.",
+      "summary": "Update the backend admin credentials to match the provided first admin account so that email/password login succeeds immediately: set `adminEmail` to `fitting.point.official@gmail.com` and `adminPassword` to `Farhan@456`, and ensure `authenticateAdminWithEmailPassword(email, password)` grants the caller the `#admin` role when those credentials match.",
       "reqIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Redesign homepage to match vnscollection.com with admin-editable full-length banners",
+  "projectName": "Fix admin email/password login by hardcoding first admin credentials and removing broken token bootstrap UI",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

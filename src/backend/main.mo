@@ -9,6 +9,7 @@ import Nat "mo:core/Nat";
 import Char "mo:core/Char";
 import Order "mo:core/Order";
 import Iter "mo:core/Iter";
+import Bool "mo:core/Bool";
 
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
@@ -16,7 +17,6 @@ import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import Migration "migration";
 
-// Specify the data migration function in with-PCR clause
 (with migration = Migration.run)
 actor {
   type ProductId = Text;
@@ -28,16 +28,41 @@ actor {
   type Quantity = Nat;
   type GuestId = Text;
 
+  type ProductBadge = {
+    #new;
+    #bestseller;
+  };
+
+  type ProductType = {
+    #clothing;
+    #accessory;
+    #footwear;
+    #electronics;
+    #other : Text;
+  };
+
+  type UsageCategory = {
+    #hajj;
+    #umrah;
+    #both;
+  };
+
   module Product {
     type Product = {
       id : ProductId;
       name : Text;
+      shortDescriptor : Text;
       description : Text;
       price : Price;
       images : [Storage.ExternalBlob];
       sizes : [Size];
       colors : [Color];
       category : Category;
+      badge : ?ProductBadge;
+      isNewProduct : Bool;
+      isBestseller : Bool;
+      productType : ?ProductType;
+      usageCategory : ?UsageCategory;
     };
     public func compare(p1 : Product, p2 : Product) : Order.Order {
       Text.compare(p1.id, p2.id);
@@ -47,12 +72,18 @@ actor {
   type Product = {
     id : ProductId;
     name : Text;
+    shortDescriptor : Text;
     description : Text;
     price : Price;
     images : [Storage.ExternalBlob];
     sizes : [Size];
     colors : [Color];
     category : Category;
+    badge : ?ProductBadge;
+    isNewProduct : Bool;
+    isBestseller : Bool;
+    productType : ?ProductType;
+    usageCategory : ?UsageCategory;
   };
 
   type CartItem = {
@@ -174,6 +205,9 @@ actor {
     banners = [];
   };
 
+  var adminEmail : ?Text = ?"fitting.point.official@gmail.com";
+  var adminPassword : ?Text = ?"Farhan@456";
+
   include MixinStorage();
 
   func toUpper(c : Char) : Char {
@@ -217,9 +251,28 @@ actor {
     cap.replace(#char ' ', "_");
   };
 
+  // Add backend method to grant bootstrap admin privileges.
+  public shared ({ caller }) func unlockBootstrapAdminPrivileges(adminToken : Text, userProvidedToken : Text) : async () {
+    AccessControl.initialize(accessControlState, caller, adminToken, userProvidedToken);
+  };
+
+  /// Authenticate admin using email and password.
+  public shared ({ caller }) func authenticateAdminWithEmailPassword(email : Text, password : Text) : async () {
+    switch (adminEmail, adminPassword) {
+      case (?storedEmail, ?storedPassword) {
+        if (email == storedEmail and password == storedPassword) {
+          AccessControl.assignRole(accessControlState, caller, caller, #admin);
+        } else {
+          Runtime.trap("Authentication failed. Check your credentials or unlock admin privileges.");
+        };
+      };
+      case (_) { Runtime.trap("Administrator credentials not found. Contact support."); };
+    };
+  };
+
   // Banner Management
   public shared ({ caller }) func addBanner(image : Storage.ExternalBlob, text : Text, link : ?Text) : async Banner {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can add banners");
     };
 
@@ -237,7 +290,7 @@ actor {
   };
 
   public shared ({ caller }) func updateBanner(id : Text, image : ?Storage.ExternalBlob, text : ?Text, link : ?Text) : async Banner {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update banners");
     };
 
@@ -253,11 +306,7 @@ actor {
           link = link;
         };
 
-        let updatedBanners = rangeToArray(0, siteContent.banners.size()).map(
-          func(i) {
-            if (i == idx) { updatedBanner } else { siteContent.banners[i] };
-          }
-        );
+        let updatedBanners = Array.tabulate(siteContent.banners.size(), func(i) { if (i == idx) { updatedBanner } else { siteContent.banners[i] } });
 
         siteContent := { siteContent with banners = updatedBanners };
         updatedBanner;
@@ -266,7 +315,7 @@ actor {
   };
 
   public shared ({ caller }) func deleteBanner(id : Text) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can delete banners");
     };
 
@@ -281,14 +330,9 @@ actor {
     siteContent.banners;
   };
 
-  func rangeToArray(start : Nat, end : Nat) : [Nat] {
-    let size = if (start >= end) { 0 } else { end - start };
-    Array.tabulate<Nat>(size, func(i) { i + start });
-  };
-
   // Site Content Management
   public shared ({ caller }) func saveDraft(content : Text, isHeroText : Bool) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update site content");
     };
 
@@ -318,7 +362,7 @@ actor {
   };
 
   public shared ({ caller }) func publishSiteContent() : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can publish site content");
     };
 
@@ -339,7 +383,7 @@ actor {
   };
 
   public shared ({ caller }) func toggleDarkMode(enabled : Bool) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can toggle dark mode");
     };
     siteContent := {
@@ -376,7 +420,7 @@ actor {
 
   // Product Management (Admin-only)
   public shared ({ caller }) func addProduct(product : Product) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can add products");
     };
 
@@ -388,6 +432,10 @@ actor {
           Runtime.trap("Product name must be at least 3 characters long.");
         };
       };
+    };
+
+    if (product.shortDescriptor.trim(#char ' ').size() == 0) {
+      Runtime.trap("Short descriptor cannot be empty.");
     };
 
     if (product.price == 0) {
@@ -413,7 +461,7 @@ actor {
   };
 
   public shared ({ caller }) func adminUpdateProduct(product : Product) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can update products");
     };
 
@@ -425,6 +473,10 @@ actor {
           Runtime.trap("Product name must be at least 3 characters long.");
         };
       };
+    };
+
+    if (product.shortDescriptor.trim(#char ' ').size() == 0) {
+      Runtime.trap("Short descriptor cannot be empty.");
     };
 
     if (product.price == 0) {
@@ -442,7 +494,6 @@ actor {
     if (product.colors.size() == 0) {
       Runtime.trap("Product must have at least one color. Product #" # productName);
     };
-
     let productId = generateId(product.name);
     let newProduct = { product with id = productId };
 
@@ -450,7 +501,7 @@ actor {
   };
 
   public shared ({ caller }) func adminDeleteProduct(productId : ProductId) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can delete products");
     };
 
@@ -594,7 +645,7 @@ actor {
 
   // Lookbook Management
   public shared ({ caller }) func addLookbookImage(image : LookbookImage) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can add lookbook images");
     };
 
@@ -612,4 +663,3 @@ actor {
     lookbook.values().toArray().sort();
   };
 };
-

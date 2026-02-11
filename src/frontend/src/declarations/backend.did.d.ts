@@ -41,15 +41,28 @@ export interface LookbookImage {
 export type Price = bigint;
 export interface Product {
   'id' : ProductId,
+  'isNewProduct' : boolean,
   'name' : string,
+  'shortDescriptor' : string,
+  'usageCategory' : [] | [UsageCategory],
   'description' : string,
+  'productType' : [] | [ProductType],
   'sizes' : Array<Size>,
+  'isBestseller' : boolean,
   'category' : Category,
+  'badge' : [] | [ProductBadge],
   'colors' : Array<Color>,
   'price' : Price,
   'images' : Array<ExternalBlob>,
 }
+export type ProductBadge = { 'new' : null } |
+  { 'bestseller' : null };
 export type ProductId = string;
+export type ProductType = { 'accessory' : null } |
+  { 'clothing' : null } |
+  { 'other' : string } |
+  { 'footwear' : null } |
+  { 'electronics' : null };
 export type Quantity = bigint;
 export interface SiteContent {
   'banners' : Array<Banner>,
@@ -66,6 +79,9 @@ export interface SiteContentBlock {
   'image' : [] | [ExternalBlob],
 }
 export type Size = string;
+export type UsageCategory = { 'both' : null } |
+  { 'hajj' : null } |
+  { 'umrah' : null };
 export interface UserProfile { 'name' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -106,6 +122,13 @@ export interface _SERVICE {
   'adminDeleteProduct' : ActorMethod<[ProductId], undefined>,
   'adminUpdateProduct' : ActorMethod<[Product], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  /**
+   * / Authenticate admin using email and password.
+   */
+  'authenticateAdminWithEmailPassword' : ActorMethod<
+    [string, string],
+    undefined
+  >,
   'deleteBanner' : ActorMethod<[string], undefined>,
   'filterProductsByCategory' : ActorMethod<[Category], Array<Product>>,
   'filterProductsByColor' : ActorMethod<[Color], Array<Product>>,
@@ -128,6 +151,7 @@ export interface _SERVICE {
   'saveDraft' : ActorMethod<[string, boolean], undefined>,
   'searchProducts' : ActorMethod<[string], Array<Product>>,
   'toggleDarkMode' : ActorMethod<[boolean], undefined>,
+  'unlockBootstrapAdminPrivileges' : ActorMethod<[string, string], undefined>,
   'updateBanner' : ActorMethod<
     [string, [] | [ExternalBlob], [] | [string], [] | [string]],
     Banner

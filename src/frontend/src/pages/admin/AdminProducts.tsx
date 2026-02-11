@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import AdminLayout from '../../components/AdminLayout';
 import {
@@ -14,8 +16,8 @@ import {
   useUpdateProduct,
   useDeleteProduct,
 } from '../../hooks/useQueries';
-import type { Product } from '../../backend';
-import { ExternalBlob } from '../../backend';
+import type { Product, ProductType } from '../../backend';
+import { ExternalBlob, ProductBadge, UsageCategory } from '../../backend';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings';
 
@@ -41,11 +43,18 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
 
   const [formData, setFormData] = useState({
     name: '',
+    shortDescriptor: '',
     description: '',
     price: '',
     category: '',
     sizes: '',
     colors: '',
+    badge: '' as '' | 'new' | 'bestseller',
+    isNewProduct: false,
+    isBestseller: false,
+    productType: '' as '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other',
+    productTypeOther: '',
+    usageCategory: '' as '' | 'hajj' | 'umrah' | 'both',
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -94,7 +103,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       return;
     }
 
-    if (!formData.name.trim() || !formData.price || !formData.category.trim()) {
+    if (!formData.name.trim() || !formData.shortDescriptor.trim() || !formData.price || !formData.category.trim()) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -119,15 +128,49 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
         imageBlobs = editingProduct.images;
       }
 
+      // Build ProductType
+      let productType: ProductType | undefined = undefined;
+      if (formData.productType) {
+        if (formData.productType === 'clothing') {
+          productType = { __kind__: 'clothing', clothing: null };
+        } else if (formData.productType === 'accessory') {
+          productType = { __kind__: 'accessory', accessory: null };
+        } else if (formData.productType === 'footwear') {
+          productType = { __kind__: 'footwear', footwear: null };
+        } else if (formData.productType === 'electronics') {
+          productType = { __kind__: 'electronics', electronics: null };
+        } else if (formData.productType === 'other' && formData.productTypeOther) {
+          productType = { __kind__: 'other', other: formData.productTypeOther };
+        }
+      }
+
+      // Build UsageCategory (enum)
+      let usageCategory: UsageCategory | undefined = undefined;
+      if (formData.usageCategory) {
+        if (formData.usageCategory === 'hajj') {
+          usageCategory = UsageCategory.hajj;
+        } else if (formData.usageCategory === 'umrah') {
+          usageCategory = UsageCategory.umrah;
+        } else if (formData.usageCategory === 'both') {
+          usageCategory = UsageCategory.both;
+        }
+      }
+
       const productData: Product = {
         id: editingProduct?.id || '',
         name: formData.name.trim(),
+        shortDescriptor: formData.shortDescriptor.trim(),
         description: formData.description.trim(),
         price: BigInt(Math.round(parseFloat(formData.price) * 100)),
         category: formData.category.trim(),
         sizes: formData.sizes.split(',').map((s) => s.trim()).filter(Boolean),
         colors: formData.colors.split(',').map((c) => c.trim()).filter(Boolean),
         images: imageBlobs,
+        badge: formData.badge ? (formData.badge === 'new' ? ProductBadge.new_ : ProductBadge.bestseller) : undefined,
+        isNewProduct: formData.isNewProduct,
+        isBestseller: formData.isBestseller,
+        productType,
+        usageCategory,
       };
 
       if (editingProduct) {
@@ -162,11 +205,18 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
   const resetForm = () => {
     setFormData({
       name: '',
+      shortDescriptor: '',
       description: '',
       price: '',
       category: '',
       sizes: '',
       colors: '',
+      badge: '',
+      isNewProduct: false,
+      isBestseller: false,
+      productType: '',
+      productTypeOther: '',
+      usageCategory: '',
     });
     setImageFiles([]);
     setEditingProduct(null);
@@ -174,13 +224,45 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    
+    let badgeValue: '' | 'new' | 'bestseller' = '';
+    if (product.badge === ProductBadge.new_) badgeValue = 'new';
+    else if (product.badge === ProductBadge.bestseller) badgeValue = 'bestseller';
+    
+    let productTypeValue: '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other' = '';
+    let productTypeOther = '';
+    if (product.productType) {
+      if (product.productType.__kind__ === 'clothing') productTypeValue = 'clothing';
+      else if (product.productType.__kind__ === 'accessory') productTypeValue = 'accessory';
+      else if (product.productType.__kind__ === 'footwear') productTypeValue = 'footwear';
+      else if (product.productType.__kind__ === 'electronics') productTypeValue = 'electronics';
+      else if (product.productType.__kind__ === 'other') {
+        productTypeValue = 'other';
+        productTypeOther = product.productType.other;
+      }
+    }
+
+    let usageCategoryValue: '' | 'hajj' | 'umrah' | 'both' = '';
+    if (product.usageCategory) {
+      if (product.usageCategory === UsageCategory.hajj) usageCategoryValue = 'hajj';
+      else if (product.usageCategory === UsageCategory.umrah) usageCategoryValue = 'umrah';
+      else if (product.usageCategory === UsageCategory.both) usageCategoryValue = 'both';
+    }
+    
     setFormData({
       name: product.name,
+      shortDescriptor: product.shortDescriptor,
       description: product.description,
       price: (Number(product.price) / 100).toFixed(2),
       category: product.category,
       sizes: product.sizes.join(', '),
       colors: product.colors.join(', '),
+      badge: badgeValue,
+      isNewProduct: product.isNewProduct,
+      isBestseller: product.isBestseller,
+      productType: productTypeValue,
+      productTypeOther,
+      usageCategory: usageCategoryValue,
     });
     setDialogOpen(true);
   };
@@ -211,7 +293,18 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                     id="name"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Premium Leather Jacket"
+                    placeholder="Premium Ihram Set"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="shortDescriptor">Short Descriptor *</Label>
+                  <Input
+                    id="shortDescriptor"
+                    value={formData.shortDescriptor}
+                    onChange={(e) => setFormData({ ...formData, shortDescriptor: e.target.value })}
+                    placeholder="Hajj & Umrah Essential"
                     required
                   />
                 </div>
@@ -248,7 +341,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                       id="category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      placeholder="Jackets"
+                      placeholder="Ihram"
                       required
                     />
                   </div>
@@ -272,9 +365,88 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                       id="colors"
                       value={formData.colors}
                       onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
-                      placeholder="Black, Brown, Navy"
+                      placeholder="White, Black, Beige"
                       required
                     />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="badge">Badge</Label>
+                    <Select value={formData.badge} onValueChange={(value) => setFormData({ ...formData, badge: value as '' | 'new' | 'bestseller' })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select badge" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="new">New</SelectItem>
+                        <SelectItem value="bestseller">Bestseller</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="productType">Product Type</Label>
+                    <Select value={formData.productType} onValueChange={(value) => setFormData({ ...formData, productType: value as '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other' })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="clothing">Clothing</SelectItem>
+                        <SelectItem value="accessory">Accessory</SelectItem>
+                        <SelectItem value="footwear">Footwear</SelectItem>
+                        <SelectItem value="electronics">Electronics</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {formData.productType === 'other' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="productTypeOther">Other Product Type</Label>
+                    <Input
+                      id="productTypeOther"
+                      value={formData.productTypeOther}
+                      onChange={(e) => setFormData({ ...formData, productTypeOther: e.target.value })}
+                      placeholder="Specify product type"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="usageCategory">Usage Category</Label>
+                  <Select value={formData.usageCategory} onValueChange={(value) => setFormData({ ...formData, usageCategory: value as '' | 'hajj' | 'umrah' | 'both' })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select usage" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="hajj">Hajj</SelectItem>
+                      <SelectItem value="umrah">Umrah</SelectItem>
+                      <SelectItem value="both">Both</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isNewProduct"
+                      checked={formData.isNewProduct}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isNewProduct: checked as boolean })}
+                    />
+                    <Label htmlFor="isNewProduct" className="cursor-pointer">New Product</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isBestseller"
+                      checked={formData.isBestseller}
+                      onCheckedChange={(checked) => setFormData({ ...formData, isBestseller: checked as boolean })}
+                    />
+                    <Label htmlFor="isBestseller" className="cursor-pointer">Bestseller</Label>
                   </div>
                 </div>
 
@@ -431,7 +603,8 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                     />
                     <div className="flex-1">
                       <h3 className="font-serif text-lg text-gold">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-1">{product.shortDescriptor}</p>
+                      <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
                       <div className="flex gap-4 mt-2 text-sm">
                         <span className="text-gold font-semibold">${(Number(product.price) / 100).toFixed(2)}</span>
                         <span className="text-muted-foreground">{product.category}</span>

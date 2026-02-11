@@ -1,105 +1,20 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Homepage redesign with admin-managed full-width banners (vnscollection-like)",
+  "title": "Remove broken admin token bootstrap UI and keep email/password as sole admin login",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Redesign the storefront homepage to closely match vnscollection.com’s structure and responsive section layout while preserving existing navigation via onNavigate.",
-      "acceptanceCriteria": [
-        "Homepage visual layout is substantially reworked to resemble the reference site’s section ordering and spacing (full-width sections where appropriate, responsive behavior included).",
-        "Homepage CTAs and interactions navigate using the existing onNavigate callback (e.g., to catalog/category, product detail) without introducing new routing infrastructure.",
-        "All user-facing text on the redesigned homepage is in English."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Rebuild the Home page layout into a reference-like, sectioned storefront (full-width banner area, editorial/content sections, featured products, and CTAs) while keeping navigation exclusively via the existing onNavigate callback; ensure all visible copy remains English and sections are responsive."
-        },
-        {
-          "path": "frontend/src/components/home/HomepageBannerRail.tsx",
-          "operation": "create",
-          "description": "Create a reusable full-width banner renderer (single banner or carousel-like rail) that consumes banner data (image via ExternalBlob direct URL + text + optional destination) and triggers navigation via onNavigate; use the blob-storage ExternalBlob getDirectURL() capability for image rendering—Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/home/HomepageSectionRenderer.tsx",
-          "operation": "create",
-          "description": "Create a data-driven section renderer to map editable site content blocks into homepage sections (e.g., editorial tiles, split image/text blocks) with graceful hiding when incomplete, to support the reference-like structure without hardcoded marketing copy."
-        }
-      ]
-    },
-    {
       "id": "REQ-2",
-      "summary": "Add homepage support for multiple admin-editable full-width banners with image, title/subheading fields, and optional click-through destination, rendered safely when empty.",
+      "summary": "Remove the token-based first-time setup/bootstrap section from the admin login UI so only email/password login is presented.",
       "acceptanceCriteria": [
-        "Admin can create, edit, and delete multiple homepage banners.",
-        "Each banner supports an uploaded image and editable text fields (at minimum: title/heading and optional subheading) and an optional destination (internal navigation and/or external URL).",
-        "Homepage displays the configured banners as full-width banners and gracefully falls back when no banners exist (no runtime errors).",
-        "Banner changes made in admin persist across refreshes (stored in the canister state)."
+        "On the /admin login screen, users no longer see inputs/buttons for \"Admin Token\", \"User Token\", or \"Grant Admin Access\".",
+        "The email/password login form remains visible and functional, and on success navigates to the admin dashboard (existing behavior in `AdminLayout.tsx`)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useHomepageBanners.ts",
-          "operation": "create",
-          "description": "Add React Query hooks for reading and mutating homepage banners using existing backend capabilities (getBanners/addBanner/updateBanner/deleteBanner) with cache invalidation so storefront reflects changes after refetch; use blob-storage ExternalBlob types for images—Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/bannerEncoding.ts",
-          "operation": "create",
-          "description": "Implement a backward-compatible banner text encoding/decoding strategy to support separate title + optional subheading while storing to the existing single Banner.text field (e.g., JSON serialization with safe fallback to plain text)."
-        },
-        {
-          "path": "frontend/src/utils/bannerDestination.ts",
-          "operation": "create",
-          "description": "Add parsing/formatting helpers for optional banner destinations to support internal navigation via onNavigate (e.g., catalog with optional category) and external URLs using the existing Banner.link field."
-        },
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
+          "path": "frontend/src/components/AdminLayout.tsx",
           "operation": "modify",
-          "description": "Render full-width banners from site content/banner state using the new banner rail component; add a no-banners fallback that shows no broken placeholders and does not throw runtime errors."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Remove or rework hardcoded homepage blocks (categories/images/marketing) and ensure remaining homepage sections are data-driven and production-safe (no broken placeholders).",
-      "acceptanceCriteria": [
-        "The current hardcoded homepage category list and any non-reference marketing blocks are removed or reworked to align with the new reference-like homepage structure.",
-        "Homepage sections that remain are data-driven (banner list and other editable homepage sections should come from site content state rather than hardcoded arrays/strings).",
-        "No broken images or placeholder-only sections remain visible by default on production builds."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/HomePage.tsx",
-          "operation": "modify",
-          "description": "Remove the hardcoded categories array and hardcoded hero/brand-promise imagery blocks; replace with data-driven sections sourced from site content state (siteContent.sections and banners) and hide sections that lack required data (no placeholder-only sections by default)."
-        },
-        {
-          "path": "frontend/src/utils/siteContentDefaults.ts",
-          "operation": "modify",
-          "description": "Adjust defaults to better support a reference-like homepage without forcing placeholder-only sections to render; ensure defaults remain English and safe when content is missing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Add a dedicated Admin Site Settings interface for managing multiple homepage banners, using MediaSlotUploader for banner image upload and React Query invalidation for instant storefront refresh after refetch.",
-      "acceptanceCriteria": [
-        "Admin Site Settings includes a clearly labeled section (e.g., \"Homepage Banners\") with a banner list and controls to add/edit/remove banners.",
-        "Each banner row/editor supports image upload via the existing MediaSlotUploader and text/destination inputs.",
-        "Saving banner changes updates the storefront homepage after data refetch (React Query invalidation) without requiring a full page reload."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "operation": "create",
-          "description": "Create an admin-only banners manager (list + add/edit/remove) that uses the existing MediaSlotUploader component for image upload/replace/remove (do not edit components under frontend/src/components/ui); use blob-storage ExternalBlob for images—Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminSiteSettings.tsx",
-          "operation": "modify",
-          "description": "Add a clearly labeled \"Homepage Banners\" section and mount the new HomepageBannersManager; wire save actions to banner hooks and ensure React Query invalidation triggers storefront updates after data refetch."
+          "description": "Remove all token-bootstrap UI and logic from the unauthenticated admin login screen: delete the \"First-Time Setup\" section (Admin Token/User Token inputs and \"Grant Admin Access\" button), remove related state (adminToken/userToken), handler (handleBootstrap), and hook usage/import (useUnlockBootstrapAdmin) so email/password is the only admin access path shown. Ensure the email/password login success navigation to the admin dashboard remains unchanged."
         }
       ]
     }

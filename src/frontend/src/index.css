@@ -6,8 +6,8 @@
     :root {
         --radius: 0.75rem;
         
-        /* Royal Gold & Ivory Premium Palette */
-        --background: 0.99 0.005 50;
+        /* Clean White & Royal Gold Premium Palette */
+        --background: 1 0 0;
         --foreground: 0.18 0.01 40;
         
         --card: 1 0 0;
@@ -16,15 +16,15 @@
         --popover: 1 0 0;
         --popover-foreground: 0.18 0.01 40;
         
-        /* Warm ivory/cream primary */
-        --primary: 0.96 0.015 55;
+        /* Soft ivory primary */
+        --primary: 0.98 0.01 55;
         --primary-foreground: 0.18 0.01 40;
         
-        /* Soft cream secondary */
+        /* Light cream secondary */
         --secondary: 0.97 0.01 60;
         --secondary-foreground: 0.18 0.01 40;
         
-        --muted: 0.95 0.01 55;
+        --muted: 0.96 0.01 55;
         --muted-foreground: 0.48 0.005 40;
         
         /* Warm cream accent */
@@ -34,18 +34,18 @@
         --destructive: 0.55 0.22 25;
         --destructive-foreground: 0.99 0 0;
         
-        --border: 0.88 0.01 55;
-        --input: 0.88 0.01 55;
+        --border: 0.90 0.01 55;
+        --input: 0.90 0.01 55;
         --ring: 0.65 0.18 45;
         
-        /* Royal Gold - rich and elegant */
+        /* Royal Gold - elegant and premium */
         --gold: 0.65 0.18 45;
         --gold-light: 0.75 0.15 50;
         --gold-dark: 0.55 0.20 40;
     }
 
     .dark {
-        /* Deep charcoal/black background */
+        /* Deep charcoal background */
         --background: 0.12 0.01 40;
         --foreground: 0.98 0.005 50;
         
@@ -120,26 +120,9 @@
         fill: oklch(var(--gold));
     }
     
-    /* Premium transitions */
+    /* Premium smooth transitions */
     .transition-premium {
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Ornamental curves utility */
-    .ornament-curve {
-        position: relative;
-    }
-    
-    .ornament-curve::before {
-        content: '';
-        position: absolute;
-        top: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60px;
-        height: 4px;
-        background: linear-gradient(90deg, transparent, oklch(var(--gold)), transparent);
-        border-radius: 2px;
     }
 }
 

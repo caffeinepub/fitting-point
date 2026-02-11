@@ -33,16 +33,38 @@ export const LookbookImage = IDL.Record({
   'image' : ExternalBlob,
   'taggedProducts' : IDL.Vec(ProductId),
 });
+export const UsageCategory = IDL.Variant({
+  'both' : IDL.Null,
+  'hajj' : IDL.Null,
+  'umrah' : IDL.Null,
+});
+export const ProductType = IDL.Variant({
+  'accessory' : IDL.Null,
+  'clothing' : IDL.Null,
+  'other' : IDL.Text,
+  'footwear' : IDL.Null,
+  'electronics' : IDL.Null,
+});
 export const Size = IDL.Text;
 export const Category = IDL.Text;
+export const ProductBadge = IDL.Variant({
+  'new' : IDL.Null,
+  'bestseller' : IDL.Null,
+});
 export const Color = IDL.Text;
 export const Price = IDL.Nat;
 export const Product = IDL.Record({
   'id' : ProductId,
+  'isNewProduct' : IDL.Bool,
   'name' : IDL.Text,
+  'shortDescriptor' : IDL.Text,
+  'usageCategory' : IDL.Opt(UsageCategory),
   'description' : IDL.Text,
+  'productType' : IDL.Opt(ProductType),
   'sizes' : IDL.Vec(Size),
+  'isBestseller' : IDL.Bool,
   'category' : Category,
+  'badge' : IDL.Opt(ProductBadge),
   'colors' : IDL.Vec(Color),
   'price' : Price,
   'images' : IDL.Vec(ExternalBlob),
@@ -122,6 +144,7 @@ export const idlService = IDL.Service({
   'adminDeleteProduct' : IDL.Func([ProductId], [], []),
   'adminUpdateProduct' : IDL.Func([Product], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'authenticateAdminWithEmailPassword' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'deleteBanner' : IDL.Func([IDL.Text], [], []),
   'filterProductsByCategory' : IDL.Func(
       [Category],
@@ -152,6 +175,7 @@ export const idlService = IDL.Service({
   'saveDraft' : IDL.Func([IDL.Text, IDL.Bool], [], []),
   'searchProducts' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
   'toggleDarkMode' : IDL.Func([IDL.Bool], [], []),
+  'unlockBootstrapAdminPrivileges' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'updateBanner' : IDL.Func(
       [IDL.Text, IDL.Opt(ExternalBlob), IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
       [Banner],
@@ -187,16 +211,38 @@ export const idlFactory = ({ IDL }) => {
     'image' : ExternalBlob,
     'taggedProducts' : IDL.Vec(ProductId),
   });
+  const UsageCategory = IDL.Variant({
+    'both' : IDL.Null,
+    'hajj' : IDL.Null,
+    'umrah' : IDL.Null,
+  });
+  const ProductType = IDL.Variant({
+    'accessory' : IDL.Null,
+    'clothing' : IDL.Null,
+    'other' : IDL.Text,
+    'footwear' : IDL.Null,
+    'electronics' : IDL.Null,
+  });
   const Size = IDL.Text;
   const Category = IDL.Text;
+  const ProductBadge = IDL.Variant({
+    'new' : IDL.Null,
+    'bestseller' : IDL.Null,
+  });
   const Color = IDL.Text;
   const Price = IDL.Nat;
   const Product = IDL.Record({
     'id' : ProductId,
+    'isNewProduct' : IDL.Bool,
     'name' : IDL.Text,
+    'shortDescriptor' : IDL.Text,
+    'usageCategory' : IDL.Opt(UsageCategory),
     'description' : IDL.Text,
+    'productType' : IDL.Opt(ProductType),
     'sizes' : IDL.Vec(Size),
+    'isBestseller' : IDL.Bool,
     'category' : Category,
+    'badge' : IDL.Opt(ProductBadge),
     'colors' : IDL.Vec(Color),
     'price' : Price,
     'images' : IDL.Vec(ExternalBlob),
@@ -276,6 +322,11 @@ export const idlFactory = ({ IDL }) => {
     'adminDeleteProduct' : IDL.Func([ProductId], [], []),
     'adminUpdateProduct' : IDL.Func([Product], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'authenticateAdminWithEmailPassword' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
     'deleteBanner' : IDL.Func([IDL.Text], [], []),
     'filterProductsByCategory' : IDL.Func(
         [Category],
@@ -306,6 +357,7 @@ export const idlFactory = ({ IDL }) => {
     'saveDraft' : IDL.Func([IDL.Text, IDL.Bool], [], []),
     'searchProducts' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
     'toggleDarkMode' : IDL.Func([IDL.Bool], [], []),
+    'unlockBootstrapAdminPrivileges' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateBanner' : IDL.Func(
         [IDL.Text, IDL.Opt(ExternalBlob), IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
         [Banner],

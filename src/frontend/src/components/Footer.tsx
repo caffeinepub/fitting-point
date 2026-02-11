@@ -1,19 +1,18 @@
 import { Heart } from 'lucide-react';
 import { SiFacebook, SiX, SiInstagram, SiYoutube } from 'react-icons/si';
 import { Separator } from '@/components/ui/separator';
+import type { CatalogFilter } from '../App';
 
-type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact';
+type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'shipping' | 'returns';
 
 interface FooterProps {
-  onNavigate: (page: Page) => void;
+  onNavigate: (page: Page, productId?: string, filter?: CatalogFilter) => void;
 }
 
 export default function Footer({ onNavigate }: FooterProps) {
   const currentYear = new Date().getFullYear();
   
-  // Use official static logo asset
   const logoSrc = '/assets/ChatGPT Image Dec 11, 2025, 10_50_00 PM-3.png';
-
   const appIdentifier = encodeURIComponent(window.location.hostname || 'fitting-point');
 
   const quickLinks = [
@@ -25,8 +24,9 @@ export default function Footer({ onNavigate }: FooterProps) {
 
   const customerService = [
     { label: 'Contact Us', page: 'contact' as Page },
+    { label: 'Shipping', page: 'shipping' as Page },
+    { label: 'Returns', page: 'returns' as Page },
     { label: 'Wishlist', page: 'wishlist' as Page },
-    { label: 'Cart', page: 'cart' as Page },
   ];
 
   const socialLinks = [
@@ -45,10 +45,10 @@ export default function Footer({ onNavigate }: FooterProps) {
             <img
               src={logoSrc}
               alt="Fitting Point"
-              className="h-20 w-20 object-contain rounded-full"
+              className="h-20 w-20 object-contain"
             />
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Your trusted companion for the sacred journey. Quality Hajj and Umrah essentials since 2025.
+            <p className="text-sm text-muted-foreground leading-relaxed font-body">
+              Your trusted companion for the sacred journey. Premium Hajj and Umrah essentials crafted with care and devotion.
             </p>
           </div>
 
@@ -111,7 +111,6 @@ export default function Footer({ onNavigate }: FooterProps) {
 
         <Separator className="bg-gold/20 mb-6" />
 
-        {/* Bottom Bar */}
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <p className="text-sm text-muted-foreground">
             © {currentYear} Fitting Point. All rights reserved.
