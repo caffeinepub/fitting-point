@@ -2,29 +2,26 @@
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
   "summary": "New project",
-  "architectural_notes": [
-    "Admin panel uses email + password login (Internet Identity removed as of Version 14)."
-  ],
+  "architectural_notes": [],
   "known_issues": [
-    "Admin login at /admin returns 'invalid' even when using the provided admin email/password credentials."
+    "Admin login/authentication still failing after deployment: users receive 'Invalid email or password. Please check your credentials and try again.'"
   ],
   "isFixRequest": true,
-  "existing_features": [
-    {
-      "id": "feature-harden-the-admin-login-request-on-the-frontend-by-trimming-email-password-inputs-before-sending-them-to-authenticateadminwithemailpassword-and-ensure-the-ui-displays-an-invalid-credentials-message-only-when-credentials-are-actually-wrong-not-when-backend-errors-are-unrelated",
-      "title": "Harden the admin login request on the frontend by trimming email/password inputs before sending them to authenticateAdminWithEmailPassword, and ensure the UI displays an invalid-credentials message only when credentials are actually wrong (not when backend errors are unrelated).",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    }
-  ],
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix backend admin authentication so that logging in with the configured credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not fail due to authorization/initialization state.",
+      "summary": "Fix backend admin authentication so that logging in with the configured admin credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not incorrectly fail with an invalid-credentials error.",
       "reqIds": [
         "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Ensure the admin login UI continues to display the message \"Invalid email or password. Please check your credentials and try again.\" only when the backend indicates invalid credentials, and displays a non-credential-related error message for other backend failures.",
+      "reqIds": [
+        "REQ-2"
       ],
       "status": "pending"
     }

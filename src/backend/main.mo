@@ -9,13 +9,15 @@ import Nat "mo:core/Nat";
 import Char "mo:core/Char";
 import Order "mo:core/Order";
 import Iter "mo:core/Iter";
-import Bool "mo:core/Bool";
+import Migration "migration";
 
 import MixinStorage "blob-storage/Mixin";
 import Storage "blob-storage/Storage";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+// Data migration for potential admin credential structure changes
+(with migration = Migration.run)
 actor {
   type ProductId = Text;
   type UserId = Principal;

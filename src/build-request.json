@@ -5,51 +5,63 @@
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix backend admin authentication so that logging in with the configured credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not fail due to authorization/initialization state.",
+      "text": "Fix backend admin authentication so that logging in with the configured admin credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not incorrectly fail with an invalid-credentials error.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages-5"
+          "msg-1"
         ],
         "quotes": [
-          "but with this mail and password its saying invalid so work on that"
+          "STILL\nInvalid email or password. Please check your credentials and try again."
         ]
       },
       "acceptanceCriteria": [
-        "Calling authenticateAdminWithEmailPassword(\"fitting.point.official@gmail.com\", \"Farhan@456\") does not trap.",
-        "After a successful authenticateAdminWithEmailPassword call, actor.isCallerAdmin() returns true for the same caller/session.",
-        "Calling authenticateAdminWithEmailPassword with incorrect credentials still traps with an authentication/invalid-credentials error message (no silent success)."
+        "Calling authenticateAdminWithEmailPassword(\"fitting.point.official@gmail.com\", \"Farhan@456\") succeeds (does not trap) for a non-admin caller and results in isCallerAdmin() returning true for that same caller.",
+        "authenticateAdminWithEmailPassword trims the provided email and password before comparing them to the stored values.",
+        "Email comparison is case-insensitive (e.g., \"Fitting.Point.Official@gmail.com\" is accepted if the password matches).",
+        "If either credential is actually incorrect, authenticateAdminWithEmailPassword traps with an authentication-failure message that the frontend will classify as invalid credentials (e.g., contains \"Authentication failed\" or \"Check your credentials\").",
+        "Authentication does not require calling unlockBootstrapAdminPrivileges first; a fresh deployment with only the configured email/password supports admin login."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Harden the admin login request on the frontend by trimming email/password inputs before sending them to authenticateAdminWithEmailPassword, and ensure the UI displays an invalid-credentials message only when credentials are actually wrong (not when backend errors are unrelated).",
+      "text": "Ensure the admin login UI continues to display the message \"Invalid email or password. Please check your credentials and try again.\" only when the backend indicates invalid credentials, and displays a non-credential-related error message for other backend failures.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages-5"
+          "msg-1"
         ],
         "quotes": [
-          "but with this mail and password its saying invalid so work on that"
+          "Invalid email or password. Please check your credentials and try again."
         ]
       },
       "acceptanceCriteria": [
-        "Admin login from /admin succeeds when the user enters fitting.point.official@gmail.com and Farhan@456 (including if the user accidentally adds leading/trailing spaces).",
-        "After a successful login, the admin panel renders the authenticated admin layout (navigation + logout button) without requiring a refresh.",
-        "If the backend throws a non-credential error (e.g., actor not available), the UI shows a generic failure message rather than 'Invalid email or password'."
+        "When backend authentication fails due to wrong email/password, the UI displays exactly: \"Invalid email or password. Please check your credentials and try again.\"",
+        "When backend authentication fails for reasons other than invalid credentials (e.g., actor not available, unauthorized, initialization issues), the UI does not display the invalid-credentials message and instead shows a generic failure message (existing behavior via parseAdminAuthError is preserved)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo.",
-    "Do not edit files in frontend immutablePaths (e.g., frontend/src/hooks/useActor.ts and frontend/src/hooks/useInternetIdentity.ts*)."
+    "Backend must remain a single Motoko actor in backend/main.mo; add migration.mo only if a state upgrade is required.",
+    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Implementing a full token-based admin session system across all admin mutations/queries (beyond making the current credentials-based login work).",
-    "Adding new authentication providers (Internet Identity or third-party auth)."
+    "Add new authentication providers (only the existing email/password admin flow is in scope).",
+    "Add or change admin UI features beyond what is necessary to make login succeed and show correct error messages.",
+    "Introduce external databases or third-party services."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

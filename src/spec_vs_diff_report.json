@@ -1,44 +1,48 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T12:57:05.048Z",
-  "summary": "Frontend changes clearly implement credential trimming and improved error messaging around admin login, with query invalidation to re-render after login. Backend requirement to fix authenticateAdminWithEmailPassword/isCallerAdmin behavior cannot be confirmed from the provided truncated backend diff (the relevant auth function logic is not shown).",
+  "generatedAt": "2026-02-11T14:29:25.597Z",
+  "summary": "Diff adds a backend state migration that hard-sets admin credentials and wires migration into backend/main.mo, plus updates project_state.json. No frontend changes are shown, and the backend auth logic changes required by REQ-1 are not evidenced in the provided (truncated) backend/main.mo diff.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Fix backend admin authentication so that authenticateAdminWithEmailPassword with the configured credentials succeeds (no trap), grants admin privileges to the caller (isCallerAdmin() returns true), and incorrect credentials still trap with an invalid-credentials/authentication error.",
-      "reason": "backend/main.mo is truncated and does not show authenticateAdminWithEmailPassword implementation, isCallerAdmin logic, or how admin state is persisted/assigned to the caller, so the acceptance criteria cannot be verified as implemented.",
+      "requirement": "Fix backend admin authentication so that logging in with the configured admin credentials succeeds, trims inputs, compares email case-insensitively, traps with an invalid-credentials-classifiable message on mismatch, and does not require unlockBootstrapAdminPrivileges.",
+      "reason": "The diff summary shows adding a migration and importing it, but does not show any changes to authenticateAdminWithEmailPassword, isCallerAdmin, trimming/case-insensitive comparison, trap messages, or removal of any bootstrap/unlock dependency. The backend/main.mo content shown is largely unrelated type/state definitions and is truncated before any authentication functions.",
       "evidence": [
-        "backend/main.mo (truncated; auth-related functions not visible in diff summary)"
+        "backend/main.mo",
+        "backend/migration.mo"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Ensure admin login UI shows the exact invalid-credentials message only for backend invalid-credential failures, and shows a generic error for other failures (preserving parseAdminAuthError behavior).",
+      "reason": "No frontend files were modified in the diff summary, so there is no evidence of any UI/error-handling adjustment.",
+      "evidence": [
+        "<no frontend file changes shown in diff summary>"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Client-side persisted admin session state (setAdminSession/getAdminSession/clearAdminSession) and using it to mark isAuthenticated independently of backend admin status.",
-      "reason": "The BuildRequest explicitly scoped to making the current credentials-based login work and improving trimming/error messaging; persisting a separate frontend session abstraction was not requested and could be interpreted as a lightweight session system (even if not token-based).",
+      "description": "Added a state migration that unconditionally overwrites stored adminEmail/adminPassword to the configured values.",
+      "reason": "The request is to fix authentication behavior; it does not explicitly request overwriting persisted credentials via migration. A migration is allowed only if required for a state upgrade, but the diff summary does not provide evidence that a state upgrade was necessary to satisfy the bugfix.",
       "evidence": [
-        "frontend/src/hooks/useAdminSession.ts",
-        "frontend/src/utils/adminSession (referenced from useAdminSession.ts)",
-        "frontend/src/components/AdminLayout.tsx (uses useAdminSession)"
+        "backend/migration.mo",
+        "backend/main.mo"
       ]
     },
     {
-      "description": "New error-classification utility to map backend errors into UI messages (parseAdminAuthError).",
-      "reason": "REQ-2 asks to show invalid-credentials only when credentials are wrong and generic messages otherwise; creating a dedicated parsing utility is an implementation choice not explicitly requested (though aligned with the requirement).",
+      "description": "Updated project_state.json with new_feature_requests entries and known_issues.",
+      "reason": "Not part of the requested backend/frontend functional changes; BuildRequest does not mention modifying project_state.json.",
       "evidence": [
-        "frontend/src/utils/adminAuthError.ts",
-        "frontend/src/components/AdminLayout.tsx"
+        "project_state.json"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.74,
   "changed_files": [
     "backend/main.mo",
-    "frontend-file-summaries.txt",
-    "frontend/src/components/AdminLayout.tsx",
-    "frontend/src/hooks/useAdminSession.ts",
-    "frontend/src/utils/adminAuthError.ts",
+    "backend/migration.mo",
     "project_state.json"
   ]
 }

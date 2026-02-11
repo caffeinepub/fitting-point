@@ -1,31 +1,25 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Harden admin login input handling and error messaging",
+  "title": "Admin login: show invalid-credentials message only for true credential failures",
   "requirements": [
     {
       "id": "REQ-2",
-      "summary": "Trim admin login credentials before sending to the backend and improve error classification so invalid-credentials messaging is only shown for true credential failures.",
+      "summary": "Refine admin auth error classification so the UI shows the exact invalid-credentials message only when backend signals wrong email/password, and shows generic non-credential errors otherwise.",
       "acceptanceCriteria": [
-        "Admin login from /admin succeeds when the user enters fitting.point.official@gmail.com and Farhan@456 (including if the user accidentally adds leading/trailing spaces).",
-        "After a successful login, the admin panel renders the authenticated admin layout (navigation + logout button) without requiring a refresh.",
-        "If the backend throws a non-credential error (e.g., actor not available), the UI shows a generic failure message rather than 'Invalid email or password'."
+        "When backend authentication fails due to wrong email/password, the UI displays exactly: \"Invalid email or password. Please check your credentials and try again.\"",
+        "When backend authentication fails for reasons other than invalid credentials (e.g., actor not available, unauthorized, initialization issues), the UI does not display the invalid-credentials message and instead shows a generic failure message (existing behavior via parseAdminAuthError is preserved)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useAdminSession.ts",
+          "path": "frontend/src/utils/adminAuthError.ts",
           "operation": "modify",
-          "description": "Trim (and normalize) email/password inside the login mutation before calling authenticateAdminWithEmailPassword, so accidental whitespace does not cause failed login. Keep the existing isCallerAdmin query invalidation on success to ensure the authenticated admin layout renders without a refresh."
+          "description": "Tighten parseAdminAuthError invalid-credentials detection to only classify errors as invalid credentials when the backend message explicitly indicates authentication failure for email/password (e.g., contains \"Authentication failed\" or \"Check your credentials\"), and avoid classifying unrelated failures as invalid credentials."
         },
         {
           "path": "frontend/src/components/AdminLayout.tsx",
           "operation": "modify",
-          "description": "Update the admin login handler to pass trimmed credentials to the login hook (and optionally reflect trimmed email in local state) to align UI validation with the actual submitted values. Ensure the post-login flow relies on react-query invalidation (not a full reload) so the admin navigation + logout renders immediately."
-        },
-        {
-          "path": "frontend/src/utils/adminAuthError.ts",
-          "operation": "modify",
-          "description": "Refine parseAdminAuthError so 'invalid_credentials' is only returned for clear credential-failure signals (e.g., explicit invalid-credentials/authentication-failed messages). Avoid treating generic 'Unauthorized', 'Invalid', or actor/initialization failures as invalid credentials; return a generic failure message for those cases."
+          "description": "Ensure the admin login UI uses parseAdminAuthError classification consistently so the toast displays the exact invalid-credentials string only for invalid-credential failures, and otherwise displays the existing generic/non-credential error messaging without showing the invalid-credentials message."
         }
       ]
     }

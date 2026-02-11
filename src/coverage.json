@@ -1,48 +1,40 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T12:57:05.050Z",
+  "generatedAt": "2026-02-11T14:29:25.599Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 2,
-    "implemented": 1,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix backend admin authentication so that logging in with the configured credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not fail due to authorization/initialization state.",
+        "summary": "Fix backend admin authentication so that logging in with the configured admin credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not incorrectly fail with an invalid-credentials error.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Harden the admin login request on the frontend by trimming email/password inputs before sending them to authenticateAdminWithEmailPassword, and ensure the UI displays an invalid-credentials message only when credentials are actually wrong (not when backend errors are unrelated).",
-        "status": "implemented",
+        "summary": "Ensure the admin login UI continues to display the message \"Invalid email or password. Please check your credentials and try again.\" only when the backend indicates invalid credentials, and displays a non-credential-related error message for other backend failures.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/src/hooks/useAdminSession.ts",
-          "frontend/src/components/AdminLayout.tsx",
-          "frontend/src/utils/adminAuthError.ts"
+          "frontend/src/utils/adminAuthError.ts",
+          "frontend/src/components/AdminLayout.tsx"
         ],
-        "matchedFiles": [
-          "frontend/src/hooks/useAdminSession.ts",
-          "frontend/src/components/AdminLayout.tsx",
-          "frontend/src/utils/adminAuthError.ts"
-        ]
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/AdminLayout.tsx",
-    "frontend/src/hooks/useAdminSession.ts",
-    "frontend/src/utils/adminAuthError.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
