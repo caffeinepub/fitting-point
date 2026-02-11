@@ -1,20 +1,31 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Remove broken admin token bootstrap UI and keep email/password as sole admin login",
+  "title": "Harden admin login input handling and error messaging",
   "requirements": [
     {
       "id": "REQ-2",
-      "summary": "Remove the token-based first-time setup/bootstrap section from the admin login UI so only email/password login is presented.",
+      "summary": "Trim admin login credentials before sending to the backend and improve error classification so invalid-credentials messaging is only shown for true credential failures.",
       "acceptanceCriteria": [
-        "On the /admin login screen, users no longer see inputs/buttons for \"Admin Token\", \"User Token\", or \"Grant Admin Access\".",
-        "The email/password login form remains visible and functional, and on success navigates to the admin dashboard (existing behavior in `AdminLayout.tsx`)."
+        "Admin login from /admin succeeds when the user enters fitting.point.official@gmail.com and Farhan@456 (including if the user accidentally adds leading/trailing spaces).",
+        "After a successful login, the admin panel renders the authenticated admin layout (navigation + logout button) without requiring a refresh.",
+        "If the backend throws a non-credential error (e.g., actor not available), the UI shows a generic failure message rather than 'Invalid email or password'."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/hooks/useAdminSession.ts",
+          "operation": "modify",
+          "description": "Trim (and normalize) email/password inside the login mutation before calling authenticateAdminWithEmailPassword, so accidental whitespace does not cause failed login. Keep the existing isCallerAdmin query invalidation on success to ensure the authenticated admin layout renders without a refresh."
+        },
+        {
           "path": "frontend/src/components/AdminLayout.tsx",
           "operation": "modify",
-          "description": "Remove all token-bootstrap UI and logic from the unauthenticated admin login screen: delete the \"First-Time Setup\" section (Admin Token/User Token inputs and \"Grant Admin Access\" button), remove related state (adminToken/userToken), handler (handleBootstrap), and hook usage/import (useUnlockBootstrapAdmin) so email/password is the only admin access path shown. Ensure the email/password login success navigation to the admin dashboard remains unchanged."
+          "description": "Update the admin login handler to pass trimmed credentials to the login hook (and optionally reflect trimmed email in local state) to align UI validation with the actual submitted values. Ensure the post-login flow relies on react-query invalidation (not a full reload) so the admin navigation + logout renders immediately."
+        },
+        {
+          "path": "frontend/src/utils/adminAuthError.ts",
+          "operation": "modify",
+          "description": "Refine parseAdminAuthError so 'invalid_credentials' is only returned for clear credential-failure signals (e.g., explicit invalid-credentials/authentication-failed messages). Avoid treating generic 'Unauthorized', 'Invalid', or actor/initialization failures as invalid credentials; return a generic failure message for those cases."
         }
       ]
     }

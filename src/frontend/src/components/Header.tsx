@@ -4,9 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useGetWishlist, useIsCallerAdmin } from '../hooks/useQueries';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
-import { useQueryClient } from '@tanstack/react-query';
+import { useIsCallerAdmin } from '../hooks/useQueries';
 import { useGuestCart } from '../hooks/useGuestCart';
 import { useGuestWishlist } from '../hooks/useGuestWishlist';
 import { useThemeMode } from '../hooks/useThemeMode';
@@ -25,38 +23,13 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
   
-  const { data: backendWishlist = [] } = useGetWishlist();
   const { data: isAdmin = false } = useIsCallerAdmin();
-  const { login, clear, loginStatus, identity } = useInternetIdentity();
-  const queryClient = useQueryClient();
   const { cart: guestCart } = useGuestCart();
   const { wishlist: guestWishlist } = useGuestWishlist();
   const { theme, toggleTheme } = useThemeMode();
 
-  const isAuthenticated = !!identity;
-
-  const cartCount = isAuthenticated 
-    ? 0
-    : guestCart.reduce((sum, item) => sum + Number(item.quantity), 0);
-  
-  const wishlistCount = isAuthenticated ? backendWishlist.length : guestWishlist.length;
-
-  const handleAuth = async () => {
-    if (isAuthenticated) {
-      await clear();
-      queryClient.clear();
-    } else {
-      try {
-        await login();
-      } catch (error: any) {
-        console.error('Login error:', error);
-        if (error.message === 'User is already authenticated') {
-          await clear();
-          setTimeout(() => login(), 300);
-        }
-      }
-    }
-  };
+  const cartCount = guestCart.reduce((sum, item) => sum + Number(item.quantity), 0);
+  const wishlistCount = guestWishlist.length;
 
   const handleNavClick = (label: string, filter?: CatalogFilter) => {
     if (label === 'Home') {
@@ -72,7 +45,6 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
     <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/95 border-b border-gold/20 shadow-sm">
       <div className="w-full px-4 lg:px-8 xl:px-12 2xl:px-16">
         <div className="flex items-center justify-between py-4">
-          {/* Mobile Menu */}
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button
@@ -137,23 +109,9 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                   </button>
                 )}
               </Accordion>
-              <div className="mt-6">
-                <Button
-                  onClick={handleAuth}
-                  disabled={loginStatus === 'logging-in'}
-                  className={`w-full ${
-                    isAuthenticated
-                      ? 'bg-muted hover:bg-muted/80 text-foreground'
-                      : 'bg-gold hover:bg-gold/90 text-white'
-                  }`}
-                >
-                  {loginStatus === 'logging-in' ? 'Logging in...' : isAuthenticated ? 'Logout' : 'Login'}
-                </Button>
-              </div>
             </SheetContent>
           </Sheet>
 
-          {/* Logo */}
           <button
             onClick={() => onNavigate('home')}
             className="flex items-center justify-center flex-1 lg:flex-none transition-transform hover:scale-105 duration-300"
@@ -166,7 +124,6 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             <span className="ml-3 font-serif text-xl font-bold text-gold hidden sm:block">Fitting Point</span>
           </button>
 
-          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1 flex-1 justify-center">
             {navigationStructure.map((item) => (
               <div
@@ -177,9 +134,9 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               >
                 <button
                   onClick={() => handleNavClick(item.label, item.filter)}
-                  className={`px-4 py-2 text-sm font-serif tracking-wider transition-all duration-300 flex items-center gap-1 ${
+                  className={`px-4 py-2 text-sm font-serif transition-all duration-300 flex items-center gap-1 ${
                     currentPage === 'catalog' || currentPage === 'home'
-                      ? 'text-gold'
+                      ? 'text-gold font-semibold'
                       : 'text-foreground hover:text-gold'
                   }`}
                 >
@@ -187,23 +144,20 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                   {item.subcategories && <ChevronDown className="h-3 w-3" />}
                 </button>
 
-                {/* Mega Menu Dropdown */}
                 {item.subcategories && hoveredNav === item.label && (
-                  <div className="absolute top-full left-0 mt-2 bg-background border border-gold/20 rounded-lg shadow-gold-soft min-w-[240px] animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="p-4 space-y-2">
-                      {item.subcategories.map((sub) => (
-                        <button
-                          key={sub.label}
-                          onClick={() => {
-                            handleNavClick(item.label, sub.filter);
-                            setHoveredNav(null);
-                          }}
-                          className="block w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-gold hover:bg-gold/5 rounded transition-all duration-300"
-                        >
-                          {sub.label}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="absolute top-full left-0 mt-2 bg-background border border-gold/20 rounded-lg shadow-gold-soft min-w-[200px] py-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                    {item.subcategories.map((sub) => (
+                      <button
+                        key={sub.label}
+                        onClick={() => {
+                          handleNavClick(item.label, sub.filter);
+                          setHoveredNav(null);
+                        }}
+                        className="block w-full text-left px-4 py-2 text-sm text-muted-foreground hover:text-gold hover:bg-gold/5 transition-colors duration-300"
+                      >
+                        {sub.label}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -211,11 +165,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             {isAdmin && (
               <button
                 onClick={() => onNavigate('admin')}
-                className={`px-4 py-2 text-sm font-serif tracking-wider transition-all duration-300 flex items-center gap-1 ${
-                  currentPage.startsWith('admin')
-                    ? 'text-gold'
-                    : 'text-foreground hover:text-gold'
-                }`}
+                className="px-4 py-2 text-sm font-serif transition-all duration-300 flex items-center gap-2 text-foreground hover:text-gold"
               >
                 <Shield className="h-4 w-4" />
                 Admin
@@ -223,72 +173,62 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             )}
           </nav>
 
-          {/* Actions */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
-              className="text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300"
               onClick={toggleTheme}
-              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="text-gold hover:text-gold/80"
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
+
             <Button
               variant="ghost"
               size="icon"
-              className="text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300"
               onClick={() => setSearchOpen(!searchOpen)}
+              className="text-gold hover:text-gold/80 hidden md:flex"
             >
               <Search className="h-5 w-5" />
             </Button>
+
             <Button
               variant="ghost"
               size="icon"
-              className="relative text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300"
               onClick={() => onNavigate('wishlist')}
+              className="relative text-gold hover:text-gold/80"
             >
               <Heart className="h-5 w-5" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
                   {wishlistCount}
                 </span>
               )}
             </Button>
+
             <Button
               variant="ghost"
               size="icon"
-              className="relative text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300"
               onClick={() => onNavigate('cart')}
+              className="relative text-gold hover:text-gold/80"
             >
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
                   {cartCount}
                 </span>
               )}
             </Button>
-            <Button
-              onClick={handleAuth}
-              disabled={loginStatus === 'logging-in'}
-              className={`hidden lg:flex transition-all duration-300 ${
-                isAuthenticated
-                  ? 'bg-muted hover:bg-muted/80 text-foreground'
-                  : 'bg-gold hover:bg-gold/90 text-white'
-              }`}
-            >
-              {loginStatus === 'logging-in' ? 'Logging in...' : isAuthenticated ? 'Logout' : 'Login'}
-            </Button>
           </div>
         </div>
 
-        {/* Search Bar */}
         {searchOpen && (
-          <div className="pb-4 animate-in slide-in-from-top-2 duration-300">
+          <div className="pb-4 animate-in fade-in slide-in-from-top-2 duration-300">
             <Input
               type="search"
-              placeholder="Search for pilgrimage essentials..."
-              className="w-full border-gold/30 focus:border-gold transition-all duration-300"
+              placeholder="Search products..."
+              className="w-full border-gold/30 focus:border-gold"
+              autoFocus
             />
           </div>
         )}

@@ -2,10 +2,12 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-in-the-admin-login-screen-ui-remove-or-disable-the-token-based-first-time-setup-grant-admin-access-bootstrap-section-since-it-is-currently-failing-and-the-intended-flow-is-direct-email-password-login-keep-the-email-password-login-form-as-the-only-admin-access-path-presented-to-users",
-      "featureTitle": "In the admin login screen UI, remove or disable the token-based \"First-Time Setup\" / \"Grant Admin Access\" bootstrap section since it is currently failing and the intended flow is direct email + password login; keep the email/password login form as the only admin access path presented to users.",
+      "featureId": "feature-harden-the-admin-login-request-on-the-frontend-by-trimming-email-password-inputs-before-sending-them-to-authenticateadminwithemailpassword-and-ensure-the-ui-displays-an-invalid-credentials-message-only-when-credentials-are-actually-wrong-not-when-backend-errors-are-unrelated",
+      "featureTitle": "Harden the admin login request on the frontend by trimming email/password inputs before sending them to authenticateAdminWithEmailPassword, and ensure the UI displays an invalid-credentials message only when credentials are actually wrong (not when backend errors are unrelated).",
       "files": [
-        "frontend/src/components/AdminLayout.tsx"
+        "frontend/src/components/AdminLayout.tsx",
+        "frontend/src/hooks/useAdminSession.ts",
+        "frontend/src/utils/adminAuthError.ts"
       ],
       "components": [
         "blob-storage@4.0.0",

@@ -6,10 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Product } from '../backend';
 import { ProductBadge } from '../backend';
-import { useGetWishlist } from '../hooks/useQueries';
 import { useGuestCart } from '../hooks/useGuestCart';
 import { useGuestWishlist } from '../hooks/useGuestWishlist';
-import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { toast } from 'sonner';
 import type { CatalogFilter } from '../App';
 
@@ -23,13 +21,10 @@ interface ProductCardProps {
 export default function ProductCard({ product, onNavigate }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
-  const { data: backendWishlist = [] } = useGetWishlist();
   const { addToCart: addToGuestCart } = useGuestCart();
-  const { addToWishlist: addToGuestWishlist } = useGuestWishlist();
-  const { identity } = useInternetIdentity();
+  const { wishlist: guestWishlist, addToWishlist: addToGuestWishlist } = useGuestWishlist();
 
-  const isAuthenticated = !!identity;
-  const isInWishlist = backendWishlist.includes(product.id);
+  const isInWishlist = guestWishlist.includes(product.id);
 
   const displayImage = isHovered && product.images.length > 1 
     ? product.images[1].getDirectURL() 
@@ -38,18 +33,13 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!isAuthenticated) {
-      addToGuestCart({
-        productId: product.id,
-        size: product.sizes[0] || 'One Size',
-        color: product.colors[0] || 'Default',
-        quantity: BigInt(1),
-      });
-      toast.success('Added to cart');
-    } else {
-      toast.info('Please select size and color on product page');
-      onNavigate('product', product.id);
-    }
+    addToGuestCart({
+      productId: product.id,
+      size: product.sizes[0] || 'One Size',
+      color: product.colors[0] || 'Default',
+      quantity: BigInt(1),
+    });
+    toast.success('Added to cart');
   };
 
   const handleQuickView = (e: React.MouseEvent) => {
@@ -59,11 +49,11 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
 
   const handleWishlist = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isAuthenticated) {
+    if (!isInWishlist) {
       addToGuestWishlist(product.id);
       toast.success('Added to wishlist');
     } else {
-      toast.info('Please login to add to wishlist');
+      toast.info('Already in wishlist');
     }
   };
 
@@ -88,7 +78,6 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
         onClick={() => onNavigate('product', product.id)}
       >
         <div className="relative aspect-square overflow-hidden bg-muted/20">
-          {/* Image Crossfade */}
           <div className="relative w-full h-full">
             <img
               src={product.images[0]?.getDirectURL()}
@@ -108,7 +97,6 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
             )}
           </div>
 
-          {/* Badge */}
           {getBadgeLabel() && (
             <Badge
               variant={getBadgeVariant()}
@@ -118,7 +106,6 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
             </Badge>
           )}
 
-          {/* Quick Actions */}
           <div
             className={`absolute inset-0 bg-black/40 flex items-center justify-center gap-2 transition-opacity duration-500 ${
               isHovered ? 'opacity-100' : 'opacity-0'
@@ -182,7 +169,6 @@ export default function ProductCard({ product, onNavigate }: ProductCardProps) {
         </CardContent>
       </Card>
 
-      {/* Quick View Modal */}
       <Dialog open={quickViewOpen} onOpenChange={setQuickViewOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>

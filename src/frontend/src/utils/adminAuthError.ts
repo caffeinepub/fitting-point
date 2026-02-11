@@ -17,18 +17,31 @@ export interface ParsedAdminAuthError {
  */
 export function parseAdminAuthError(error: any): ParsedAdminAuthError {
   const errorMessage = error?.message || String(error);
+  const lowerMessage = errorMessage.toLowerCase();
   
-  // Check for invalid credentials patterns
+  // Only treat as invalid credentials if we have explicit authentication failure messages
   const isInvalidCredentials = 
-    errorMessage.includes('Authentication failed') ||
-    errorMessage.includes('Check your credentials') ||
-    errorMessage.includes('Invalid') ||
-    errorMessage.includes('Unauthorized');
+    lowerMessage.includes('authentication failed') ||
+    lowerMessage.includes('check your credentials') ||
+    lowerMessage.includes('invalid email') ||
+    lowerMessage.includes('invalid password') ||
+    lowerMessage.includes('incorrect credentials');
 
   if (isInvalidCredentials) {
     return {
       type: 'invalid_credentials',
       message: 'Invalid email or password. Please check your credentials and try again.',
+      originalError: error,
+    };
+  }
+
+  // Check for actor/initialization errors
+  if (lowerMessage.includes('actor not available') || 
+      lowerMessage.includes('not initialized') ||
+      lowerMessage.includes('canister')) {
+    return {
+      type: 'generic_failure',
+      message: 'System is initializing. Please wait a moment and try again.',
       originalError: error,
     };
   }

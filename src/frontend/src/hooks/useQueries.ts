@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { Product, LookbookImage, CartItem, ProductId, UserProfile } from '../backend';
-import { Principal } from '@icp-sdk/core/principal';
+import type { Product, CartItem, LookbookImage, UserProfile } from '../backend';
+import { ExternalBlob } from '../backend';
+import { getAdminSession } from '../utils/adminSession';
 
 // Products
 export function useGetAllProducts() {
@@ -30,7 +31,91 @@ export function useGetProduct(productId: string) {
   });
 }
 
-// Cart
+export function useSearchProducts(searchTerm: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Product[]>({
+    queryKey: ['products', 'search', searchTerm],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.searchProducts(searchTerm);
+    },
+    enabled: !!actor && !isFetching && searchTerm.length > 0,
+  });
+}
+
+// Admin Product Management
+export function useAddProduct() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (product: Product) => {
+      if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
+      return actor.addProduct(product);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useUpdateProduct() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (product: Product) => {
+      if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
+      return actor.adminUpdateProduct(product);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (productId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
+      return actor.adminDeleteProduct(productId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
+  });
+}
+
+// Cart (disabled for guest-only mode)
+export function useGetCart() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<CartItem[]>({
+    queryKey: ['cart'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return [];
+    },
+    enabled: false,
+  });
+}
+
 export function useAddToCart() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -51,7 +136,7 @@ export function useRemoveFromCart() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productId: ProductId) => {
+    mutationFn: async (productId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeFromCart(productId);
     },
@@ -61,45 +146,32 @@ export function useRemoveFromCart() {
   });
 }
 
-export function useGetCart() {
+// Wishlist (disabled for guest-only mode)
+export function useGetWishlist() {
   const { actor, isFetching } = useActor();
 
-  return useQuery({
-    queryKey: ['cart'],
+  return useQuery<string[]>({
+    queryKey: ['wishlist'],
     queryFn: async () => {
       if (!actor) return [];
-      return actor.getCart();
+      return [];
     },
-    enabled: !!actor && !isFetching,
+    enabled: false,
   });
 }
 
-// Wishlist
 export function useAddToWishlist() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (productId: ProductId) => {
+    mutationFn: async (productId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addToWishlist(productId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['wishlist'] });
     },
-  });
-}
-
-export function useGetWishlist() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ProductId[]>({
-    queryKey: ['wishlist'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getWishlist();
-    },
-    enabled: !!actor && !isFetching,
   });
 }
 
@@ -124,6 +196,10 @@ export function useAddLookbookImage() {
   return useMutation({
     mutationFn: async (image: LookbookImage) => {
       if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.addLookbookImage(image);
     },
     onSuccess: () => {
@@ -132,125 +208,38 @@ export function useAddLookbookImage() {
   });
 }
 
-// Admin - Products
-export function useAddProduct() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (product: Product) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.addProduct(product);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-}
-
-export function useUpdateProduct() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (product: Product) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.adminUpdateProduct(product);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-}
-
-export function useDeleteProduct() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (productId: ProductId) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.adminDeleteProduct(productId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-    },
-  });
-}
-
-// Admin - Authorization
+// Admin Check
 export function useIsCallerAdmin() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
-  const query = useQuery<boolean>({
-    queryKey: ['isAdmin'],
+  return useQuery<boolean>({
+    queryKey: ['isCallerAdmin'],
     queryFn: async () => {
       if (!actor) return false;
-      return actor.isCallerAdmin();
+      try {
+        return await actor.isCallerAdmin();
+      } catch (error) {
+        return false;
+      }
     },
-    enabled: !!actor && !actorFetching,
+    enabled: !!actor && !isFetching,
     retry: false,
   });
-
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
 }
 
-export function useUnlockBootstrapAdmin() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ adminToken, userProvidedToken }: { adminToken: string; userProvidedToken: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.unlockBootstrapAdminPrivileges(adminToken, userProvidedToken);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
-    },
-  });
-}
-
-// Admin - Email/Password Login
-export function useAdminEmailPasswordLogin() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.authenticateAdminWithEmailPassword(email, password);
-    },
-    onSuccess: async () => {
-      // Invalidate and refetch isAdmin to update access control state
-      await queryClient.invalidateQueries({ queryKey: ['isAdmin'] });
-      await queryClient.refetchQueries({ queryKey: ['isAdmin'] });
-    },
-  });
-}
-
-// User Profile
+// User Profile (disabled)
 export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
+  const { actor, isFetching } = useActor();
 
-  const query = useQuery<UserProfile | null>({
+  return useQuery<UserProfile | null>({
     queryKey: ['currentUserProfile'],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
+      if (!actor) return null;
+      return null;
     },
-    enabled: !!actor && !actorFetching,
+    enabled: false,
     retry: false,
   });
-
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
 }
 
 export function useSaveCallerUserProfile() {
@@ -268,20 +257,40 @@ export function useSaveCallerUserProfile() {
   });
 }
 
-// Site Content
-export function useGetSiteContent() {
-  const { actor, isFetching } = useActor();
+// Admin Email/Password Login
+export function useAdminEmailPasswordLogin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
 
-  return useQuery({
-    queryKey: ['siteContent'],
-    queryFn: async () => {
+  return useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.getSiteContent();
+      await actor.authenticateAdminWithEmailPassword(email, password);
+      return { email };
     },
-    enabled: !!actor && !isFetching,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+    },
   });
 }
 
+// Bootstrap Admin (disabled)
+export function useUnlockBootstrapAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ adminToken, userToken }: { adminToken: string; userToken: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.unlockBootstrapAdminPrivileges(adminToken, userToken);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isCallerAdmin'] });
+    },
+  });
+}
+
+// Site Content Draft Saving
 export function useSaveDraft() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -289,37 +298,11 @@ export function useSaveDraft() {
   return useMutation({
     mutationFn: async ({ content, isHeroText }: { content: string; isHeroText: boolean }) => {
       if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.saveDraft(content, isHeroText);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['siteContent'] });
-    },
-  });
-}
-
-export function usePublishSiteContent() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.publishSiteContent();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['siteContent'] });
-    },
-  });
-}
-
-export function useToggleDarkMode() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (enabled: boolean) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.toggleDarkMode(enabled);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['siteContent'] });

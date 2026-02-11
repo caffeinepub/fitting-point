@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { SiteContent } from '../backend';
 import { getSiteContentDefaults } from '../utils/siteContentDefaults';
+import { getAdminSession } from '../utils/adminSession';
 
 export function useSiteContent() {
   const { actor, isFetching } = useActor();
@@ -28,6 +29,10 @@ export function usePublishSiteContent() {
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not initialized');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.publishSiteContent();
     },
     onSuccess: () => {
@@ -43,6 +48,10 @@ export function useToggleDarkMode() {
   return useMutation({
     mutationFn: async (enabled: boolean) => {
       if (!actor) throw new Error('Actor not initialized');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.toggleDarkMode(enabled);
     },
     onSuccess: () => {

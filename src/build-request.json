@@ -1,55 +1,52 @@
 {
   "kind": "build_request",
-  "title": "Fix admin email/password login by hardcoding first admin credentials and removing broken token bootstrap UI",
+  "title": "Fix admin email/password login rejecting valid credentials",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the backend admin credentials to match the provided first admin account so that email/password login succeeds immediately: set `adminEmail` to `fitting.point.official@gmail.com` and `adminPassword` to `Farhan@456`, and ensure `authenticateAdminWithEmailPassword(email, password)` grants the caller the `#admin` role when those credentials match.",
+      "text": "Fix backend admin authentication so that logging in with the configured credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not fail due to authorization/initialization state.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages-5"
         ],
         "quotes": [
-          "fitting.point.official@gmail.com\nFarhan@456",
-          "YES"
+          "but with this mail and password its saying invalid so work on that"
         ]
       },
       "acceptanceCriteria": [
-        "Backend `adminEmail` equals `fitting.point.official@gmail.com` and `adminPassword` equals `Farhan@456` after deployment.",
-        "Calling `authenticateAdminWithEmailPassword(\"fitting.point.official@gmail.com\",\"Farhan@456\")` succeeds and assigns the caller admin role (so subsequent `isCallerAdmin()` returns `true` for that caller).",
-        "Calling `authenticateAdminWithEmailPassword` with an incorrect email and/or password traps with an error message that the frontend classifies as invalid credentials (e.g., includes \"Authentication failed\" or similar)."
+        "Calling authenticateAdminWithEmailPassword(\"fitting.point.official@gmail.com\", \"Farhan@456\") does not trap.",
+        "After a successful authenticateAdminWithEmailPassword call, actor.isCallerAdmin() returns true for the same caller/session.",
+        "Calling authenticateAdminWithEmailPassword with incorrect credentials still traps with an authentication/invalid-credentials error message (no silent success)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "In the admin login screen UI, remove or disable the token-based \"First-Time Setup\" / \"Grant Admin Access\" bootstrap section since it is currently failing and the intended flow is direct email + password login; keep the email/password login form as the only admin access path presented to users.",
+      "text": "Harden the admin login request on the frontend by trimming email/password inputs before sending them to authenticateAdminWithEmailPassword, and ensure the UI displays an invalid-credentials message only when credentials are actually wrong (not when backend errors are unrelated).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages-5"
         ],
         "quotes": [
-          "And the **Grant Admin Access** form is also failing because the tokens no longer match the updated version of the app after removing Internet Identity.",
-          "No tokens. No Internet Identity. No bootstrap. Just straight email + password."
+          "but with this mail and password its saying invalid so work on that"
         ]
       },
       "acceptanceCriteria": [
-        "On the /admin login screen, users no longer see inputs/buttons for \"Admin Token\", \"User Token\", or \"Grant Admin Access\".",
-        "The email/password login form remains visible and functional, and on success navigates to the admin dashboard (existing behavior in `AdminLayout.tsx`)."
+        "Admin login from /admin succeeds when the user enters fitting.point.official@gmail.com and Farhan@456 (including if the user accidentally adds leading/trailing spaces).",
+        "After a successful login, the admin panel renders the authenticated admin layout (navigation + logout button) without requiring a refresh.",
+        "If the backend throws a non-credential error (e.g., actor not available), the UI shows a generic failure message rather than 'Invalid email or password'."
       ]
     }
   ],
   "constraints": [
-    "Backend changes must remain within the existing single-actor Motoko architecture (`backend/main.mo`).",
-    "Do not edit files under `frontend/src/hooks/useInternetIdentity.ts(x)`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, or any files in `frontend/src/components/ui` (immutable paths).",
-    "Use English for any user-facing text."
+    "Backend must remain a single Motoko actor in backend/main.mo.",
+    "Do not edit files in frontend immutablePaths (e.g., frontend/src/hooks/useActor.ts and frontend/src/hooks/useInternetIdentity.ts*)."
   ],
   "nonGoals": [
-    "Implementing a multi-admin management system (create/delete multiple admins).",
-    "Adding password reset, email verification, or any external authentication provider.",
-    "Changing the overall storefront/checkout behavior."
+    "Implementing a full token-based admin session system across all admin mutations/queries (beyond making the current credentials-based login work).",
+    "Adding new authentication providers (Internet Identity or third-party auth)."
   ],
   "imageRequirements": {
     "required": [],

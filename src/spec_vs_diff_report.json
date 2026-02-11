@@ -1,51 +1,44 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T18:23:32.741Z",
-  "summary": "REQ-2 appears implemented by removing token-based bootstrap UI from the admin login experience and presenting email/password login. REQ-1 is only partially evidenced: adminEmail/adminPassword are set via a migration, but the diff summary does not show that authenticateAdminWithEmailPassword assigns the #admin role nor that it traps with an 'Authentication failed' style message on invalid credentials.",
+  "generatedAt": "2026-02-11T12:57:05.048Z",
+  "summary": "Frontend changes clearly implement credential trimming and improved error messaging around admin login, with query invalidation to re-render after login. Backend requirement to fix authenticateAdminWithEmailPassword/isCallerAdmin behavior cannot be confirmed from the provided truncated backend diff (the relevant auth function logic is not shown).",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Ensure authenticateAdminWithEmailPassword(email, password) grants the caller the #admin role when the credentials match fitting.point.official@gmail.com / Farhan@456, so subsequent isCallerAdmin() returns true for that caller.",
-      "reason": "The diff summary shows a migration setting adminEmail/adminPassword, but the provided backend/main.mo excerpt is truncated and contains no visible changes to authenticateAdminWithEmailPassword or role assignment behavior.",
+      "requirement": "Fix backend admin authentication so that authenticateAdminWithEmailPassword with the configured credentials succeeds (no trap), grants admin privileges to the caller (isCallerAdmin() returns true), and incorrect credentials still trap with an invalid-credentials/authentication error.",
+      "reason": "backend/main.mo is truncated and does not show authenticateAdminWithEmailPassword implementation, isCallerAdmin logic, or how admin state is persisted/assigned to the caller, so the acceptance criteria cannot be verified as implemented.",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-1",
-      "requirement": "On incorrect email/password, authenticateAdminWithEmailPassword traps with an error message that the frontend classifies as invalid credentials (e.g., contains 'Authentication failed' or similar).",
-      "reason": "No backend error message changes are shown in the diff summary; backend/main.mo is truncated before any authenticateAdminWithEmailPassword implementation details.",
-      "evidence": [
-        "backend/main.mo (truncated)"
+        "backend/main.mo (truncated; auth-related functions not visible in diff summary)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added a new migration module and wired migration execution into the actor using (with migration = Migration.run).",
-      "reason": "REQ-1 asks to set admin credentials and fix authentication behavior but does not explicitly request adding a migration system/module; this is extra implementation beyond the stated requirement (though it may support it).",
+      "description": "Client-side persisted admin session state (setAdminSession/getAdminSession/clearAdminSession) and using it to mark isAuthenticated independently of backend admin status.",
+      "reason": "The BuildRequest explicitly scoped to making the current credentials-based login work and improving trimming/error messaging; persisting a separate frontend session abstraction was not requested and could be interpreted as a lightweight session system (even if not token-based).",
       "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (truncated)"
+        "frontend/src/hooks/useAdminSession.ts",
+        "frontend/src/utils/adminSession (referenced from useAdminSession.ts)",
+        "frontend/src/components/AdminLayout.tsx (uses useAdminSession)"
       ]
     },
     {
-      "description": "Admin login screen enhancements unrelated to removing token bootstrap: principal ID display/copy-to-clipboard UI and locked static logo asset path.",
-      "reason": "REQ-2 only requests removing/disabling token-based bootstrap UI and keeping email/password login as the sole path; it does not request adding principal copy functionality or changing/locking the logo asset.",
+      "description": "New error-classification utility to map backend errors into UI messages (parseAdminAuthError).",
+      "reason": "REQ-2 asks to show invalid-credentials only when credentials are wrong and generic messages otherwise; creating a dedicated parsing utility is an implementation choice not explicitly requested (though aligned with the requirement).",
       "evidence": [
-        "frontend/src/components/AdminLayout.tsx",
-        "frontend-file-summaries.txt (AdminLayout entry)"
+        "frontend/src/utils/adminAuthError.ts",
+        "frontend/src/components/AdminLayout.tsx"
       ]
     }
   ],
   "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/components/AdminLayout.tsx",
+    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/utils/adminAuthError.ts",
     "project_state.json"
   ]
 }

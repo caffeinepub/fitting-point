@@ -1,20 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Admin login is failing after removing Internet Identity; system now uses email+password but lacks a working initial admin bootstrap/creation path (tokens no longer match), requiring a backend change to create the first admin account.",
+  "summary": "New project",
   "architectural_notes": [
-    "Internet Identity was removed; authentication is now intended to be email + password.",
-    "Current 'Grant Admin Access' / initialization token bootstrap mechanism appears incompatible with the updated build (token mismatch)."
+    "Admin panel uses email + password login (Internet Identity removed as of Version 14)."
   ],
   "known_issues": [
-    "Admin login returns 'Invalid email or password' because no admin account exists in the database yet.",
-    "'Grant Admin Access' token-based bootstrap is failing due to tokens not matching the updated version after Internet Identity removal."
+    "Admin login at /admin returns 'invalid' even when using the provided admin email/password credentials."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-in-the-admin-login-screen-ui-remove-or-disable-the-token-based-first-time-setup-grant-admin-access-bootstrap-section-since-it-is-currently-failing-and-the-intended-flow-is-direct-email-password-login-keep-the-email-password-login-form-as-the-only-admin-access-path-presented-to-users",
-      "title": "In the admin login screen UI, remove or disable the token-based \"First-Time Setup\" / \"Grant Admin Access\" bootstrap section since it is currently failing and the intended flow is direct email + password login; keep the email/password login form as the only admin access path presented to users.",
+      "id": "feature-harden-the-admin-login-request-on-the-frontend-by-trimming-email-password-inputs-before-sending-them-to-authenticateadminwithemailpassword-and-ensure-the-ui-displays-an-invalid-credentials-message-only-when-credentials-are-actually-wrong-not-when-backend-errors-are-unrelated",
+      "title": "Harden the admin login request on the frontend by trimming email/password inputs before sending them to authenticateAdminWithEmailPassword, and ensure the UI displays an invalid-credentials message only when credentials are actually wrong (not when backend errors are unrelated).",
       "reqIds": [
         "REQ-2"
       ],
@@ -24,20 +22,14 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement a reliable initial admin creation/bootstrap flow for email+password login (no outdated tokens), so first admin can be created and log in successfully.",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Update the backend admin credentials to match the provided first admin account so that email/password login succeeds immediately: set `adminEmail` to `fitting.point.official@gmail.com` and `adminPassword` to `Farhan@456`, and ensure `authenticateAdminWithEmailPassword(email, password)` grants the caller the `#admin` role when those credentials match.",
+      "summary": "Fix backend admin authentication so that logging in with the configured credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not fail due to authorization/initialization state.",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix admin email/password login by hardcoding first admin credentials and removing broken token bootstrap UI",
+  "projectName": "Fix admin email/password login rejecting valid credentials",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

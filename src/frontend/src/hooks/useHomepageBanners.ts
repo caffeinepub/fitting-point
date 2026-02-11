@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { Banner } from '../backend';
 import { ExternalBlob } from '../backend';
+import { getAdminSession } from '../utils/adminSession';
 
 export function useGetBanners() {
   const { actor, isFetching } = useActor();
@@ -23,6 +24,10 @@ export function useAddBanner() {
   return useMutation({
     mutationFn: async ({ image, text, link }: { image: ExternalBlob; text: string; link?: string | null }) => {
       if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.addBanner(image, text, link || null);
     },
     onSuccess: () => {
@@ -49,6 +54,10 @@ export function useUpdateBanner() {
       link?: string | null;
     }) => {
       if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.updateBanner(id, image || null, text || null, link !== undefined ? link : null);
     },
     onSuccess: () => {
@@ -65,6 +74,10 @@ export function useDeleteBanner() {
   return useMutation({
     mutationFn: async (id: string) => {
       if (!actor) throw new Error('Actor not available');
+      const session = getAdminSession();
+      if (!session.isAuthenticated) {
+        throw new Error('Admin authentication required');
+      }
       return actor.deleteBanner(id);
     },
     onSuccess: () => {

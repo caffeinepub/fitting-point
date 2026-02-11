@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -19,34 +21,154 @@ import AdminLookbook from './pages/admin/AdminLookbook';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminSessions from './pages/admin/AdminSessions';
 import AdminSiteSettings from './pages/admin/AdminSiteSettings';
+import AdminLayout from './components/AdminLayout';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export type CatalogFilter = {
-  category?: string | null;
-  subcategory?: string | null;
-  productType?: string | null;
-  usageCategory?: string | null;
+  category?: string;
+  productType?: string;
+  usageCategory?: string;
   isNew?: boolean;
   isBestseller?: boolean;
 };
 
-type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'checkout' | 'shipping' | 'returns' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings';
+type Page = 
+  | 'home' 
+  | 'catalog' 
+  | 'product' 
+  | 'cart' 
+  | 'wishlist' 
+  | 'lookbook' 
+  | 'about' 
+  | 'contact' 
+  | 'checkout' 
+  | 'shipping' 
+  | 'returns' 
+  | 'admin' 
+  | 'admin-products' 
+  | 'admin-lookbook' 
+  | 'admin-categories' 
+  | 'admin-sessions'
+  | 'admin-site-settings';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [catalogFilter, setCatalogFilter] = useState<CatalogFilter>({});
 
-  // Parse URL on mount and popstate
   useEffect(() => {
-    const parseURL = () => {
+    const path = window.location.pathname;
+    const params = new URLSearchParams(window.location.search);
+
+    if (path === '/' || path === '/home') {
+      setCurrentPage('home');
+    } else if (path === '/catalog') {
+      setCurrentPage('catalog');
+      const filter: CatalogFilter = {};
+      if (params.get('category')) filter.category = params.get('category')!;
+      if (params.get('productType')) filter.productType = params.get('productType')!;
+      if (params.get('usageCategory')) filter.usageCategory = params.get('usageCategory')!;
+      if (params.get('isNew')) filter.isNew = params.get('isNew') === 'true';
+      if (params.get('isBestseller')) filter.isBestseller = params.get('isBestseller') === 'true';
+      setCatalogFilter(filter);
+    } else if (path.startsWith('/product/')) {
+      const productId = path.split('/product/')[1];
+      setCurrentPage('product');
+      setSelectedProductId(productId);
+    } else if (path === '/cart') {
+      setCurrentPage('cart');
+    } else if (path === '/wishlist') {
+      setCurrentPage('wishlist');
+    } else if (path === '/lookbook') {
+      setCurrentPage('lookbook');
+    } else if (path === '/about') {
+      setCurrentPage('about');
+    } else if (path === '/contact') {
+      setCurrentPage('contact');
+    } else if (path === '/checkout') {
+      setCurrentPage('checkout');
+    } else if (path === '/shipping') {
+      setCurrentPage('shipping');
+    } else if (path === '/returns') {
+      setCurrentPage('returns');
+    } else if (path === '/admin/products') {
+      setCurrentPage('admin-products');
+    } else if (path === '/admin/lookbook') {
+      setCurrentPage('admin-lookbook');
+    } else if (path === '/admin/categories') {
+      setCurrentPage('admin-categories');
+    } else if (path === '/admin/sessions') {
+      setCurrentPage('admin-sessions');
+    } else if (path === '/admin/site-settings') {
+      setCurrentPage('admin-site-settings');
+    } else if (path === '/admin') {
+      setCurrentPage('admin');
+    }
+  }, []);
+
+  const handleNavigate = (page: Page, productId?: string, filter?: CatalogFilter) => {
+    setCurrentPage(page);
+    
+    if (page === 'home') {
+      window.history.pushState({}, '', '/');
+    } else if (page === 'catalog') {
+      const params = new URLSearchParams();
+      if (filter?.category) params.set('category', filter.category);
+      if (filter?.productType) params.set('productType', filter.productType);
+      if (filter?.usageCategory) params.set('usageCategory', filter.usageCategory);
+      if (filter?.isNew) params.set('isNew', 'true');
+      if (filter?.isBestseller) params.set('isBestseller', 'true');
+      const queryString = params.toString();
+      window.history.pushState({}, '', `/catalog${queryString ? `?${queryString}` : ''}`);
+      setCatalogFilter(filter || {});
+    } else if (page === 'product' && productId) {
+      window.history.pushState({}, '', `/product/${productId}`);
+      setSelectedProductId(productId);
+    } else if (page === 'admin') {
+      window.history.pushState({}, '', '/admin');
+    } else if (page === 'admin-products') {
+      window.history.pushState({}, '', '/admin/products');
+    } else if (page === 'admin-lookbook') {
+      window.history.pushState({}, '', '/admin/lookbook');
+    } else if (page === 'admin-categories') {
+      window.history.pushState({}, '', '/admin/categories');
+    } else if (page === 'admin-sessions') {
+      window.history.pushState({}, '', '/admin/sessions');
+    } else if (page === 'admin-site-settings') {
+      window.history.pushState({}, '', '/admin/site-settings');
+    } else {
+      window.history.pushState({}, '', `/${page}`);
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
       const path = window.location.pathname;
-      
-      if (path === '/' || path === '') {
+      const params = new URLSearchParams(window.location.search);
+
+      if (path === '/' || path === '/home') {
         setCurrentPage('home');
       } else if (path === '/catalog') {
         setCurrentPage('catalog');
+        const filter: CatalogFilter = {};
+        if (params.get('category')) filter.category = params.get('category')!;
+        if (params.get('productType')) filter.productType = params.get('productType')!;
+        if (params.get('usageCategory')) filter.usageCategory = params.get('usageCategory')!;
+        if (params.get('isNew')) filter.isNew = params.get('isNew') === 'true';
+        if (params.get('isBestseller')) filter.isBestseller = params.get('isBestseller') === 'true';
+        setCatalogFilter(filter);
       } else if (path.startsWith('/product/')) {
-        const productId = path.replace('/product/', '');
+        const productId = path.split('/product/')[1];
         setCurrentPage('product');
         setSelectedProductId(productId);
       } else if (path === '/cart') {
@@ -75,140 +197,99 @@ function App() {
         setCurrentPage('admin-sessions');
       } else if (path === '/admin/site-settings') {
         setCurrentPage('admin-site-settings');
-      } else if (path === '/admin' || path.startsWith('/admin')) {
+      } else if (path === '/admin') {
         setCurrentPage('admin');
-      } else {
-        setCurrentPage('home');
       }
-    };
-
-    parseURL();
-
-    const handlePopState = () => {
-      parseURL();
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const navigateTo = (page: Page, productId?: string, filter?: CatalogFilter) => {
-    setCurrentPage(page);
-    if (productId) setSelectedProductId(productId);
-    if (filter) setCatalogFilter(filter);
-
-    // Update URL
-    let path = '/';
-    switch (page) {
-      case 'home':
-        path = '/';
-        break;
-      case 'catalog':
-        path = '/catalog';
-        break;
-      case 'product':
-        path = productId ? `/product/${productId}` : '/catalog';
-        break;
-      case 'cart':
-        path = '/cart';
-        break;
-      case 'wishlist':
-        path = '/wishlist';
-        break;
-      case 'lookbook':
-        path = '/lookbook';
-        break;
-      case 'about':
-        path = '/about';
-        break;
-      case 'contact':
-        path = '/contact';
-        break;
-      case 'checkout':
-        path = '/checkout';
-        break;
-      case 'shipping':
-        path = '/shipping';
-        break;
-      case 'returns':
-        path = '/returns';
-        break;
-      case 'admin':
-        path = '/admin';
-        break;
-      case 'admin-products':
-        path = '/admin/products';
-        break;
-      case 'admin-lookbook':
-        path = '/admin/lookbook';
-        break;
-      case 'admin-categories':
-        path = '/admin/categories';
-        break;
-      case 'admin-sessions':
-        path = '/admin/sessions';
-        break;
-      case 'admin-site-settings':
-        path = '/admin/site-settings';
-        break;
-    }
-
-    window.history.pushState({}, '', path);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const isAdminPage = currentPage.startsWith('admin');
 
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <HomePage onNavigate={navigateTo} />;
+        return <HomePage onNavigate={handleNavigate} />;
       case 'catalog':
-        return <ProductCatalog onNavigate={navigateTo} initialFilter={catalogFilter} />;
+        return <ProductCatalog onNavigate={handleNavigate} initialFilter={catalogFilter} />;
       case 'product':
         return selectedProductId ? (
-          <ProductDetail productId={selectedProductId} onNavigate={navigateTo} />
+          <ProductDetail productId={selectedProductId} onNavigate={handleNavigate} />
         ) : (
-          <HomePage onNavigate={navigateTo} />
+          <HomePage onNavigate={handleNavigate} />
         );
       case 'cart':
-        return <Cart onNavigate={navigateTo} />;
+        return <Cart onNavigate={handleNavigate} />;
       case 'wishlist':
-        return <Wishlist onNavigate={navigateTo} />;
+        return <Wishlist onNavigate={handleNavigate} />;
       case 'lookbook':
-        return <Lookbook onNavigate={navigateTo} />;
+        return <Lookbook onNavigate={handleNavigate} />;
       case 'about':
         return <About />;
       case 'contact':
         return <Contact />;
       case 'checkout':
-        return <Checkout onNavigate={navigateTo} />;
+        return <Checkout onNavigate={handleNavigate} />;
       case 'shipping':
         return <Shipping />;
       case 'returns':
         return <Returns />;
       case 'admin':
-        return <AdminDashboard onNavigate={navigateTo} />;
+        return (
+          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Admin Dashboard">
+            <AdminDashboard onNavigate={handleNavigate} />
+          </AdminLayout>
+        );
       case 'admin-products':
-        return <AdminProducts onNavigate={navigateTo} />;
+        return (
+          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Product Management">
+            <AdminProducts onNavigate={handleNavigate} />
+          </AdminLayout>
+        );
       case 'admin-lookbook':
-        return <AdminLookbook onNavigate={navigateTo} />;
+        return (
+          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Lookbook Management">
+            <AdminLookbook onNavigate={handleNavigate} />
+          </AdminLayout>
+        );
       case 'admin-categories':
-        return <AdminCategories onNavigate={navigateTo} />;
+        return (
+          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Category Overview">
+            <AdminCategories onNavigate={handleNavigate} />
+          </AdminLayout>
+        );
       case 'admin-sessions':
-        return <AdminSessions onNavigate={navigateTo} />;
+        return (
+          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="User Sessions">
+            <AdminSessions onNavigate={handleNavigate} />
+          </AdminLayout>
+        );
       case 'admin-site-settings':
-        return <AdminSiteSettings onNavigate={navigateTo} />;
+        return (
+          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Site Settings">
+            <AdminSiteSettings onNavigate={handleNavigate} />
+          </AdminLayout>
+        );
       default:
-        return <HomePage onNavigate={navigateTo} />;
+        return <HomePage onNavigate={handleNavigate} />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header currentPage={currentPage} onNavigate={navigateTo} />
-      <main className="flex-1">{renderPage()}</main>
-      <Footer onNavigate={navigateTo} />
-      <Toaster />
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <div className="min-h-screen flex flex-col bg-background text-foreground">
+          {!isAdminPage && <Header currentPage={currentPage} onNavigate={handleNavigate} />}
+          <main className="flex-1">
+            {renderPage()}
+          </main>
+          {!isAdminPage && <Footer onNavigate={handleNavigate} />}
+          <Toaster />
+        </div>
+      </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
