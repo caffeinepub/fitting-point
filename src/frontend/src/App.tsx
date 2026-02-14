@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
+import { RuntimeErrorBoundary } from './components/RuntimeErrorBoundary';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -15,13 +16,13 @@ import Contact from './pages/Contact';
 import Checkout from './pages/Checkout';
 import Shipping from './pages/Shipping';
 import Returns from './pages/Returns';
+import Diagnostics from './pages/Diagnostics';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProducts from './pages/admin/AdminProducts';
 import AdminLookbook from './pages/admin/AdminLookbook';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminSessions from './pages/admin/AdminSessions';
 import AdminSiteSettings from './pages/admin/AdminSiteSettings';
-import AdminLayout from './components/AdminLayout';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ export type CatalogFilter = {
   usageCategory?: string;
   isNew?: boolean;
   isBestseller?: boolean;
+  isMostLoved?: boolean;
 };
 
 type Page = 
@@ -52,6 +54,7 @@ type Page =
   | 'checkout' 
   | 'shipping' 
   | 'returns' 
+  | 'diagnostics'
   | 'admin' 
   | 'admin-products' 
   | 'admin-lookbook' 
@@ -78,6 +81,7 @@ function App() {
       if (params.get('usageCategory')) filter.usageCategory = params.get('usageCategory')!;
       if (params.get('isNew')) filter.isNew = params.get('isNew') === 'true';
       if (params.get('isBestseller')) filter.isBestseller = params.get('isBestseller') === 'true';
+      if (params.get('isMostLoved')) filter.isMostLoved = params.get('isMostLoved') === 'true';
       setCatalogFilter(filter);
     } else if (path.startsWith('/product/')) {
       const productId = path.split('/product/')[1];
@@ -99,6 +103,8 @@ function App() {
       setCurrentPage('shipping');
     } else if (path === '/returns') {
       setCurrentPage('returns');
+    } else if (path === '/__diagnostics') {
+      setCurrentPage('diagnostics');
     } else if (path === '/admin/products') {
       setCurrentPage('admin-products');
     } else if (path === '/admin/lookbook') {
@@ -126,12 +132,15 @@ function App() {
       if (filter?.usageCategory) params.set('usageCategory', filter.usageCategory);
       if (filter?.isNew) params.set('isNew', 'true');
       if (filter?.isBestseller) params.set('isBestseller', 'true');
+      if (filter?.isMostLoved) params.set('isMostLoved', 'true');
       const queryString = params.toString();
       window.history.pushState({}, '', `/catalog${queryString ? `?${queryString}` : ''}`);
       setCatalogFilter(filter || {});
     } else if (page === 'product' && productId) {
       window.history.pushState({}, '', `/product/${productId}`);
       setSelectedProductId(productId);
+    } else if (page === 'diagnostics') {
+      window.history.pushState({}, '', '/__diagnostics');
     } else if (page === 'admin') {
       window.history.pushState({}, '', '/admin');
     } else if (page === 'admin-products') {
@@ -166,6 +175,7 @@ function App() {
         if (params.get('usageCategory')) filter.usageCategory = params.get('usageCategory')!;
         if (params.get('isNew')) filter.isNew = params.get('isNew') === 'true';
         if (params.get('isBestseller')) filter.isBestseller = params.get('isBestseller') === 'true';
+        if (params.get('isMostLoved')) filter.isMostLoved = params.get('isMostLoved') === 'true';
         setCatalogFilter(filter);
       } else if (path.startsWith('/product/')) {
         const productId = path.split('/product/')[1];
@@ -187,6 +197,8 @@ function App() {
         setCurrentPage('shipping');
       } else if (path === '/returns') {
         setCurrentPage('returns');
+      } else if (path === '/__diagnostics') {
+        setCurrentPage('diagnostics');
       } else if (path === '/admin/products') {
         setCurrentPage('admin-products');
       } else if (path === '/admin/lookbook') {
@@ -207,6 +219,7 @@ function App() {
   }, []);
 
   const isAdminPage = currentPage.startsWith('admin');
+  const isDiagnosticsPage = currentPage === 'diagnostics';
 
   const renderPage = () => {
     switch (currentPage) {
@@ -236,42 +249,20 @@ function App() {
         return <Shipping />;
       case 'returns':
         return <Returns />;
+      case 'diagnostics':
+        return <Diagnostics />;
       case 'admin':
-        return (
-          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Admin Dashboard">
-            <AdminDashboard onNavigate={handleNavigate} />
-          </AdminLayout>
-        );
+        return <AdminDashboard onNavigate={handleNavigate} />;
       case 'admin-products':
-        return (
-          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Product Management">
-            <AdminProducts onNavigate={handleNavigate} />
-          </AdminLayout>
-        );
+        return <AdminProducts onNavigate={handleNavigate} />;
       case 'admin-lookbook':
-        return (
-          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Lookbook Management">
-            <AdminLookbook onNavigate={handleNavigate} />
-          </AdminLayout>
-        );
+        return <AdminLookbook onNavigate={handleNavigate} />;
       case 'admin-categories':
-        return (
-          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Category Overview">
-            <AdminCategories onNavigate={handleNavigate} />
-          </AdminLayout>
-        );
+        return <AdminCategories onNavigate={handleNavigate} />;
       case 'admin-sessions':
-        return (
-          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="User Sessions">
-            <AdminSessions onNavigate={handleNavigate} />
-          </AdminLayout>
-        );
+        return <AdminSessions onNavigate={handleNavigate} />;
       case 'admin-site-settings':
-        return (
-          <AdminLayout currentPage={currentPage} onNavigate={handleNavigate} title="Site Settings">
-            <AdminSiteSettings onNavigate={handleNavigate} />
-          </AdminLayout>
-        );
+        return <AdminSiteSettings onNavigate={handleNavigate} />;
       default:
         return <HomePage onNavigate={handleNavigate} />;
     }
@@ -280,14 +271,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="min-h-screen flex flex-col bg-background text-foreground">
-          {!isAdminPage && <Header currentPage={currentPage} onNavigate={handleNavigate} />}
-          <main className="flex-1">
-            {renderPage()}
-          </main>
-          {!isAdminPage && <Footer onNavigate={handleNavigate} />}
-          <Toaster />
-        </div>
+        <RuntimeErrorBoundary>
+          <div className="min-h-screen flex flex-col bg-background text-foreground">
+            {!isAdminPage && !isDiagnosticsPage && <Header currentPage={currentPage} onNavigate={handleNavigate} />}
+            <main className="flex-1">
+              {renderPage()}
+            </main>
+            {!isAdminPage && !isDiagnosticsPage && <Footer onNavigate={handleNavigate} />}
+            <Toaster />
+          </div>
+        </RuntimeErrorBoundary>
       </ThemeProvider>
     </QueryClientProvider>
   );

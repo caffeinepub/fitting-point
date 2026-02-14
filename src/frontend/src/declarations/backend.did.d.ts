@@ -10,75 +10,53 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface Banner {
-  'id' : string,
-  'link' : [] | [string],
-  'text' : string,
-  'image' : ExternalBlob,
-}
 export type Cart = Array<CartItem>;
 export interface CartItem {
-  'color' : Color,
-  'size' : Size,
-  'productId' : ProductId,
-  'quantity' : Quantity,
-}
-export type Category = string;
-export type Color = string;
-export interface EditableText {
-  'lastEdited' : [] | [bigint],
-  'content' : string,
-  'lastPublished' : [] | [bigint],
-  'isDraft' : boolean,
+  'color' : string,
+  'size' : string,
+  'productId' : string,
+  'quantity' : bigint,
 }
 export type ExternalBlob = Uint8Array;
 export interface LookbookImage {
   'id' : string,
   'description' : string,
   'image' : ExternalBlob,
-  'taggedProducts' : Array<ProductId>,
+  'taggedProducts' : Array<string>,
 }
-export type Price = bigint;
 export interface Product {
-  'id' : ProductId,
+  'id' : string,
   'isNewProduct' : boolean,
   'name' : string,
   'shortDescriptor' : string,
   'usageCategory' : [] | [UsageCategory],
   'description' : string,
   'productType' : [] | [ProductType],
-  'sizes' : Array<Size>,
+  'sizes' : Array<string>,
+  'isMostLoved' : boolean,
   'isBestseller' : boolean,
-  'category' : Category,
-  'badge' : [] | [ProductBadge],
-  'colors' : Array<Color>,
-  'price' : Price,
+  'category' : string,
+  'colors' : Array<string>,
+  'price' : bigint,
   'images' : Array<ExternalBlob>,
 }
-export type ProductBadge = { 'new' : null } |
-  { 'bestseller' : null };
-export type ProductId = string;
 export type ProductType = { 'accessory' : null } |
   { 'clothing' : null } |
   { 'other' : string } |
   { 'footwear' : null } |
   { 'electronics' : null };
-export type Quantity = bigint;
 export interface SiteContent {
-  'banners' : Array<Banner>,
-  'heroText' : EditableText,
+  'heroText' : string,
   'footerItems' : Array<string>,
   'sections' : Array<SiteContentBlock>,
-  'previewMode' : boolean,
   'darkModeEnabled' : boolean,
-  'contactDetails' : EditableText,
+  'contactDetails' : string,
 }
 export interface SiteContentBlock {
   'title' : string,
   'content' : string,
   'image' : [] | [ExternalBlob],
 }
-export type Size = string;
 export type UsageCategory = { 'both' : null } |
   { 'hajj' : null } |
   { 'umrah' : null };
@@ -114,48 +92,30 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addBanner' : ActorMethod<[ExternalBlob, string, [] | [string]], Banner>,
   'addLookbookImage' : ActorMethod<[LookbookImage], undefined>,
   'addProduct' : ActorMethod<[Product], undefined>,
   'addToCart' : ActorMethod<[CartItem], undefined>,
-  'addToWishlist' : ActorMethod<[ProductId], undefined>,
-  'adminDeleteProduct' : ActorMethod<[ProductId], undefined>,
-  'adminUpdateProduct' : ActorMethod<[Product], undefined>,
+  'adminDeleteProduct' : ActorMethod<[string], undefined>,
+  'adminUpdateProduct' : ActorMethod<[string, Product], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
-  /**
-   * / Authenticate admin using email and password.
-   */
-  'authenticateAdminWithEmailPassword' : ActorMethod<
-    [string, string],
-    undefined
-  >,
-  'deleteBanner' : ActorMethod<[string], undefined>,
-  'filterProductsByCategory' : ActorMethod<[Category], Array<Product>>,
-  'filterProductsByColor' : ActorMethod<[Color], Array<Product>>,
-  'filterProductsBySize' : ActorMethod<[Size], Array<Product>>,
+  'filterProductsByCategory' : ActorMethod<[string], Array<Product>>,
   'getAllLookbookImages' : ActorMethod<[], Array<LookbookImage>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
-  'getBanners' : ActorMethod<[], Array<Banner>>,
+  'getBestsellers' : ActorMethod<[], Array<Product>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCart' : ActorMethod<[], Cart>,
   'getLookbookImage' : ActorMethod<[string], LookbookImage>,
-  'getProduct' : ActorMethod<[ProductId], Product>,
+  'getMostLovedProducts' : ActorMethod<[], Array<Product>>,
+  'getNewProducts' : ActorMethod<[], Array<Product>>,
+  'getProduct' : ActorMethod<[string], Product>,
   'getSiteContent' : ActorMethod<[], SiteContent>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
-  'getWishlist' : ActorMethod<[], Array<ProductId>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'publishSiteContent' : ActorMethod<[], undefined>,
-  'removeFromCart' : ActorMethod<[ProductId], undefined>,
+  'isReady' : ActorMethod<[], boolean>,
+  'removeFromCart' : ActorMethod<[string, string, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'saveDraft' : ActorMethod<[string, boolean], undefined>,
-  'searchProducts' : ActorMethod<[string], Array<Product>>,
-  'toggleDarkMode' : ActorMethod<[boolean], undefined>,
-  'unlockBootstrapAdminPrivileges' : ActorMethod<[string, string], undefined>,
-  'updateBanner' : ActorMethod<
-    [string, [] | [ExternalBlob], [] | [string], [] | [string]],
-    Banner
-  >,
+  'updateSiteContent' : ActorMethod<[string, string, boolean], undefined>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

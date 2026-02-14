@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ProductId } from '../backend';
 import { getGuestWishlist, saveGuestWishlist, clearGuestWishlist } from '../utils/localWishlist';
 
 export function useGuestWishlist() {
-  const [wishlist, setWishlist] = useState<ProductId[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
 
   useEffect(() => {
     setWishlist(getGuestWishlist());
   }, []);
 
-  const addToWishlist = (productId: ProductId) => {
+  const addToWishlist = (productId: string) => {
     if (!wishlist.includes(productId)) {
       const newWishlist = [...wishlist, productId];
       setWishlist(newWishlist);
@@ -17,7 +16,7 @@ export function useGuestWishlist() {
     }
   };
 
-  const removeFromWishlist = (productId: ProductId) => {
+  const removeFromWishlist = (productId: string) => {
     const newWishlist = wishlist.filter((id) => id !== productId);
     setWishlist(newWishlist);
     saveGuestWishlist(newWishlist);

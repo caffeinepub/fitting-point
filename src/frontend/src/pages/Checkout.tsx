@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { useGuestCart } from '../hooks/useGuestCart';
 import { useGetAllProducts } from '../hooks/useQueries';
 import { buildWhatsAppCheckoutURL } from '../utils/whatsapp';
+import { formatINR } from '../utils/currency';
 
 type Page = 'home' | 'catalog' | 'cart';
 
@@ -61,28 +62,31 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {cartWithDetails.map((item, index) => (
-              <div key={index}>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-serif text-lg">{item.product?.name || 'Unknown Product'}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Size: {item.size} • Color: {item.color} • Qty: {Number(item.quantity)}
+            {cartWithDetails.map((item, index) => {
+              const lineTotal = item.product ? Number(item.product.price) * Number(item.quantity) : 0;
+              return (
+                <div key={index}>
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-serif text-lg">{item.product?.name || 'Unknown Product'}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Size: {item.size} • Color: {item.color} • Qty: {Number(item.quantity)}
+                      </p>
+                    </div>
+                    <p className="font-serif text-gold">
+                      {formatINR(lineTotal)}
                     </p>
                   </div>
-                  <p className="font-serif text-gold">
-                    ₹{item.product ? (Number(item.product.price) * Number(item.quantity)).toLocaleString() : 0}
-                  </p>
+                  {index < cartWithDetails.length - 1 && <Separator className="mt-4 bg-gold/20" />}
                 </div>
-                {index < cartWithDetails.length - 1 && <Separator className="mt-4 bg-gold/20" />}
-              </div>
-            ))}
+              );
+            })}
 
             <Separator className="bg-gold/20" />
 
             <div className="flex justify-between items-center text-lg font-serif">
               <span>Total</span>
-              <span className="text-gold text-2xl">₹{subtotal.toLocaleString()}</span>
+              <span className="text-gold text-2xl">{formatINR(subtotal)}</span>
             </div>
           </CardContent>
         </Card>

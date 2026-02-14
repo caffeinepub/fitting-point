@@ -90,7 +90,8 @@ export default {
                 'gold-glow': '0 0 30px rgba(184, 134, 11, 0.3)',
                 'gold-soft': '0 8px 24px rgba(184, 134, 11, 0.15)',
                 'gold-subtle': '0 4px 12px rgba(184, 134, 11, 0.1)',
-                'premium': '0 10px 40px rgba(0, 0, 0, 0.08)',
+                'premium': '0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(184, 134, 11, 0.06)',
+                'premium-lg': '0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(184, 134, 11, 0.08)',
             },
             keyframes: {
                 'accordion-down': {
@@ -112,6 +113,14 @@ export default {
                 'slide-in-from-top-2': {
                     from: { transform: 'translateY(-8px)', opacity: '0' },
                     to: { transform: 'translateY(0)', opacity: '1' }
+                },
+                'sheen': {
+                    '0%': { transform: 'translateX(-100%) translateY(100%)' },
+                    '100%': { transform: 'translateX(100%) translateY(-100%)' }
+                },
+                'shimmer': {
+                    '0%': { backgroundPosition: '-200% 0' },
+                    '100%': { backgroundPosition: '200% 0' }
                 }
             },
             animation: {
@@ -120,13 +129,19 @@ export default {
                 'fade-in': 'fade-in 0.5s ease-out',
                 'slide-up': 'slide-up 0.5s ease-out',
                 'in': 'fade-in 0.3s ease-out',
+                'sheen': 'sheen 1s ease-in-out',
+                'shimmer': 'shimmer 2s linear infinite',
             },
             fontFamily: {
+                heading: ['Playfair Display', 'Georgia', 'serif'],
+                body: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
                 serif: ['Playfair Display', 'Georgia', 'serif'],
-                body: ['Cormorant Garamond', 'Georgia', 'serif'],
             },
             maxWidth: {
                 'screen-2xl': '1920px',
+            },
+            aspectRatio: {
+                '3/4': '3 / 4',
             }
         }
     },

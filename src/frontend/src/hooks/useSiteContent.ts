@@ -1,39 +1,34 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import type { SiteContent } from '../backend';
-import { getSiteContentDefaults } from '../utils/siteContentDefaults';
-import { getAdminSession } from '../utils/adminSession';
+import { useAdminGuard } from './useAdminGuard';
 
-export function useSiteContent() {
+export function useGetSiteContent() {
   const { actor, isFetching } = useActor();
 
   return useQuery<SiteContent>({
     queryKey: ['siteContent'],
     queryFn: async () => {
-      if (!actor) return getSiteContentDefaults();
-      try {
-        return await actor.getSiteContent();
-      } catch (error) {
-        console.error('Error loading site content:', error);
-        return getSiteContentDefaults();
-      }
+      if (!actor) throw new Error('Actor not available');
+      return actor.getSiteContent();
     },
     enabled: !!actor && !isFetching,
   });
 }
 
-export function usePublishSiteContent() {
+export function useUpdateSiteContent() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { requireAdmin } = useAdminGuard();
 
   return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not initialized');
-      const session = getAdminSession();
-      if (!session.isAuthenticated) {
-        throw new Error('Admin authentication required');
-      }
-      return actor.publishSiteContent();
+    mutationFn: async ({ heroText, contactDetails, darkModeEnabled }: { heroText: string; contactDetails: string; darkModeEnabled: boolean }) => {
+      if (!actor) throw new Error('Actor not available');
+      
+      // Verify backend admin status before proceeding
+      await requireAdmin();
+      
+      return actor.updateSiteContent(heroText, contactDetails, darkModeEnabled);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['siteContent'] });
@@ -44,15 +39,24 @@ export function usePublishSiteContent() {
 export function useToggleDarkMode() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
+  const { requireAdmin } = useAdminGuard();
 
   return useMutation({
     mutationFn: async (enabled: boolean) => {
-      if (!actor) throw new Error('Actor not initialized');
-      const session = getAdminSession();
-      if (!session.isAuthenticated) {
-        throw new Error('Admin authentication required');
-      }
-      return actor.toggleDarkMode(enabled);
+      if (!actor) throw new Error('Actor not available');
+      
+      // Get current site content
+      const currentContent = await actor.getSiteContent();
+      
+      // Verify backend admin status before proceeding
+      await requireAdmin();
+      
+      // Update with new dark mode setting
+      return actor.updateSiteContent(
+        currentContent.heroText,
+        currentContent.contactDetails,
+        enabled
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['siteContent'] });

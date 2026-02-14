@@ -4,15 +4,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useSiteContent } from '../hooks/useSiteContent';
+import { useGetSiteContent } from '../hooks/useSiteContent';
 import { getSiteContentDefaults } from '../utils/siteContentDefaults';
 
 export default function Contact() {
-  const { data: siteContent } = useSiteContent();
+  const { data: siteContent } = useGetSiteContent();
   const defaults = getSiteContentDefaults();
   
   // Get contact details with rich text support
-  const contactDetailsContent = siteContent?.contactDetails?.content || defaults.contactDetails.content;
+  const contactDetailsContent = siteContent?.contactDetails || defaults.contactDetails;
 
   const contactInfo = [
     {
@@ -28,7 +28,7 @@ export default function Contact() {
     {
       icon: Mail,
       title: 'Email Us',
-      details: ['info@fittingpoint.com', 'support@fittingpoint.com'],
+      details: ['fitting.point.official@gmail.com'],
     },
   ];
 
@@ -74,50 +74,81 @@ export default function Contact() {
         </div>
 
         {/* Contact Form */}
-        <div className="max-w-2xl mx-auto">
-          <Card className="border-gold/20">
-            <CardContent className="p-8">
-              <h2 className="font-serif text-3xl text-gold mb-6 text-center">Send Us a Message</h2>
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" placeholder="Ahmed" className="border-gold/30" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" placeholder="Khan" className="border-gold/30" />
-                  </div>
+        <Card className="max-w-2xl mx-auto border-gold/20">
+          <CardContent className="p-8">
+            <h2 className="font-serif text-3xl text-gold mb-6 text-center">Send Us a Message</h2>
+            <form className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" placeholder="Your name" className="border-gold/30 focus:border-gold" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" placeholder="ahmed@example.com" className="border-gold/30" />
+                  <Input id="email" type="email" placeholder="your@email.com" className="border-gold/30 focus:border-gold" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="subject">Subject</Label>
-                  <Input id="subject" placeholder="Inquiry about Ihram products" className="border-gold/30" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="Tell us more about your inquiry..."
-                    rows={6}
-                    className="border-gold/30"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="w-full bg-gold text-white hover:bg-gold/90 font-serif"
-                >
-                  Send Message
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject">Subject</Label>
+                <Input id="subject" placeholder="How can we help?" className="border-gold/30 focus:border-gold" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="message">Message</Label>
+                <Textarea
+                  id="message"
+                  placeholder="Tell us more about your inquiry..."
+                  rows={6}
+                  className="border-gold/30 focus:border-gold resize-none"
+                />
+              </div>
+              <Button type="submit" className="w-full bg-gold hover:bg-gold/90 text-white" size="lg">
+                Send Message
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* WhatsApp CTA */}
+      <section className="container mx-auto px-4 pb-16">
+        <Card className="max-w-2xl mx-auto border-gold/20 bg-gold/5">
+          <CardContent className="p-8 text-center space-y-4">
+            <h3 className="font-serif text-2xl text-gold">Prefer WhatsApp?</h3>
+            <p className="text-muted-foreground">
+              Get instant support and quick responses via WhatsApp
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="bg-gold hover:bg-gold/90 text-white"
+            >
+              <a href="https://wa.me/+919826022251" target="_blank" rel="noopener noreferrer">
+                <MessageCircleIcon className="mr-2 h-5 w-5" />
+                Chat on WhatsApp
+              </a>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     </div>
+  );
+}
+
+function MessageCircleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
   );
 }

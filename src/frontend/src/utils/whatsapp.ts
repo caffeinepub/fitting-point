@@ -1,3 +1,5 @@
+import { formatINR } from './currency';
+
 interface CartItemWithProduct {
   productId: string;
   size: string;
@@ -27,7 +29,7 @@ export function buildWhatsAppCheckoutURL(
   total: number
 ): string {
   const phoneNumber = normalizePhoneNumber(
-    import.meta.env.VITE_WHATSAPP_NUMBER || '9826022251'
+    import.meta.env.VITE_WHATSAPP_NUMBER || '919826022251'
   );
 
   // Build order message
@@ -45,11 +47,11 @@ export function buildWhatsAppCheckoutURL(
     message += `   Size: ${item.size}\n`;
     message += `   Color: ${item.color}\n`;
     message += `   Quantity: ${quantity}\n`;
-    message += `   Price: ₹${lineTotal.toLocaleString()}\n\n`;
+    message += `   Price: ${formatINR(lineTotal)}\n\n`;
   });
 
   message += '━━━━━━━━━━━━━━━━\n';
-  message += `*Total Amount: ₹${total.toLocaleString()}*\n\n`;
+  message += `*Total Amount: ${formatINR(total)}*\n\n`;
   message += 'Please confirm this order and let me know the delivery details.';
 
   // Encode message for URL

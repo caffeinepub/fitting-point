@@ -1,25 +1,56 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin login: show invalid-credentials message only for true credential failures",
+  "title": "Fix admin panel auth UI to use Internet Identity and add admin auth diagnostics",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Refine admin auth error classification so the UI shows the exact invalid-credentials message only when backend signals wrong email/password, and shows generic non-credential errors otherwise.",
+      "id": "REQ-3",
+      "summary": "Replace the broken Admin Key admin gate with an Internet Identity login prompt and post-login admin verification that routes admins to the dashboard and non-admins to a recovery/error state.",
       "acceptanceCriteria": [
-        "When backend authentication fails due to wrong email/password, the UI displays exactly: \"Invalid email or password. Please check your credentials and try again.\"",
-        "When backend authentication fails for reasons other than invalid credentials (e.g., actor not available, unauthorized, initialization issues), the UI does not display the invalid-credentials message and instead shows a generic failure message (existing behavior via parseAdminAuthError is preserved)."
+        "If the user is not logged in (anonymous), the admin page shows a 'Log in with Internet Identity' call-to-action (English text) and does not misleadingly require an Admin Key.",
+        "After successful Internet Identity login, the app re-checks `isCallerAdmin()` and navigates into the admin dashboard when the caller is an admin.",
+        "If the logged-in user is not an admin, the UI shows an English error message indicating they do not have admin permissions and provides at least one recovery action (e.g., logout/switch account, retry verification, reset admin session)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/adminAuthError.ts",
+          "path": "frontend/src/components/AdminLayout.tsx",
           "operation": "modify",
-          "description": "Tighten parseAdminAuthError invalid-credentials detection to only classify errors as invalid credentials when the backend message explicitly indicates authentication failure for email/password (e.g., contains \"Authentication failed\" or \"Check your credentials\"), and avoid classifying unrelated failures as invalid credentials."
+          "description": "Update the admin gate flow to: (1) detect anonymous viewers via `useInternetIdentity()` and render an Internet Identity login/sign-up prompt with a 'Log in with Internet Identity' CTA; (2) after login, re-check admin status using `useIsCallerAdmin()` and navigate to the admin dashboard when admin; (3) if authenticated but not admin, show an 'insufficient permissions' state with recovery actions (logout/switch account using `clear()`, retry verification via refetch, and reset admin session). Remove all Admin Key UI copy/inputs/icons so the page is not misleading. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useAdminSession.ts",
+          "operation": "modify",
+          "description": "Refactor admin session helper to align with Internet Identity: remove the Admin Key parameter from `login`, keep it as a lightweight 'verify admin and persist session' helper (calling `actor.isCallerAdmin()`), and ensure `logout`/`resetSession` remain available for the recovery actions used by the admin gate UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust `useIsCallerAdmin()` behavior to better support the new gate UI: avoid running admin verification when the viewer is anonymous (so the admin page can consistently show the Internet Identity login prompt first) and keep errors surfaced for the authenticated verification step. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add a minimal diagnostics surface on the admin gate for admin verification failures, including parsed messaging and copyable technical error details.",
+      "acceptanceCriteria": [
+        "When `useIsCallerAdmin()` errors, the admin gate screen shows an English summary plus a collapsible/copyable technical detail (e.g., the raw error message) without crashing the app.",
+        "The existing `parseAdminAuthError` classification is used to drive user-facing messaging."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
+          "operation": "create",
+          "description": "Create a small reusable diagnostics UI used by the admin gate to render: (1) an English summary driven by `parseAdminAuthError`, (2) a collapsible technical details section showing the raw error message/string, and (3) a 'Copy details' action that copies the technical detail text to the clipboard. Use existing shadcn/ui building blocks via composition (do not edit `frontend/src/components/ui`). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/AdminLayout.tsx",
           "operation": "modify",
-          "description": "Ensure the admin login UI uses parseAdminAuthError classification consistently so the toast displays the exact invalid-credentials string only for invalid-credential failures, and otherwise displays the existing generic/non-credential error messaging without showing the invalid-credentials message."
+          "description": "Integrate the new `AdminAuthDiagnostics` component into the admin gate error states (admin verification errors and other admin-auth-related failures) so the UI shows parsed English messaging plus collapsible/copyable technical detail without crashing; continue using `parseAdminAuthError` for classification. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/adminAuthError.ts",
+          "operation": "modify",
+          "description": "Ensure `parseAdminAuthError` continues to provide stable, English, user-facing messages for Internet Identity and authorization scenarios (including anonymous access, authorization traps, and actor/initialization issues) suitable for driving the admin gate diagnostics surface. Verify the component's usage instructions before implementing."
         }
       ]
     }

@@ -86,8 +86,16 @@
     }
     
     body {
-        @apply bg-background text-foreground;
+        @apply bg-background text-foreground font-body;
         font-feature-settings: "rlig" 1, "calt" 1;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        @apply font-heading;
+    }
+    
+    button, input, select, textarea, label {
+        @apply font-body;
     }
 }
 
@@ -116,6 +124,10 @@
         border-color: oklch(var(--gold));
     }
     
+    .hover\:bg-gold-dark:hover {
+        background-color: oklch(var(--gold-dark));
+    }
+    
     .fill-gold {
         fill: oklch(var(--gold));
     }
@@ -124,7 +136,20 @@
     .transition-premium {
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
+    
+    /* Enhanced section spacing utilities */
+    .section-spacing {
+        @apply py-20 px-4 lg:px-8 xl:px-12 2xl:px-16;
+    }
+    
+    .section-spacing-sm {
+        @apply py-12 px-4 lg:px-8 xl:px-12 2xl:px-16;
+    }
+    
+    .section-spacing-lg {
+        @apply py-24 px-4 lg:px-8 xl:px-12 2xl:px-16;
+    }
 }
 
-/* Import elegant calligraphic serif fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap');
+/* Import modern premium font pairing */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');

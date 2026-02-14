@@ -1,12 +1,21 @@
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { useGetAllProducts } from '../hooks/useQueries';
 import ProductCard from '../components/ProductCard';
+import HomepageBannerRail from '../components/home/HomepageBannerRail';
+import HomepageProductSection from '../components/home/HomepageProductSection';
+import OffersSection from '../components/home/OffersSection';
+import CustomerReviewsSection from '../components/home/CustomerReviewsSection';
+import PartnersSection from '../components/home/PartnersSection';
+import ContactCtaSection from '../components/home/ContactCtaSection';
 import { homepageCategoryCards } from '../utils/storefrontNav';
 import { ArrowRight } from 'lucide-react';
 import type { CatalogFilter } from '../App';
+import { UsageCategory } from '../backend';
 
-type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact';
+type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'shipping' | 'returns';
 
 interface HomePageProps {
   onNavigate: (page: Page, productId?: string, filter?: CatalogFilter) => void;
@@ -15,64 +24,99 @@ interface HomePageProps {
 export default function HomePage({ onNavigate }: HomePageProps) {
   const { data: products = [], isLoading } = useGetAllProducts();
 
-  const featuredProducts = products.filter((p) => p.isBestseller).slice(0, 8);
-  const newArrivals = products.filter((p) => p.isNewProduct).slice(0, 8);
+  // Best Sellers
+  const bestSellers = useMemo(
+    () => products.filter((p) => p.isBestseller).slice(0, 8),
+    [products]
+  );
+
+  // Most Loved
+  const mostLoved = useMemo(
+    () => products.filter((p) => p.isMostLoved).slice(0, 8),
+    [products]
+  );
+
+  // New Arrivals
+  const newArrivals = useMemo(
+    () => products.filter((p) => p.isNewProduct).slice(0, 8),
+    [products]
+  );
+
+  // Category-based sections
+  const hajjProducts = useMemo(
+    () => products.filter((p) => p.usageCategory === UsageCategory.hajj || p.usageCategory === UsageCategory.both).slice(0, 8),
+    [products]
+  );
+
+  const umrahProducts = useMemo(
+    () => products.filter((p) => p.usageCategory === UsageCategory.umrah || p.usageCategory === UsageCategory.both).slice(0, 8),
+    [products]
+  );
+
+  // Banner configuration with v2 assets
+  const banners = [
+    {
+      image: '/assets/generated/mecca-hero-banner-v2.dim_2400x1000.png',
+      title: 'Premium Hajj & Umrah Essentials',
+      subtitle: 'Prepare for your sacred journey with quality and comfort',
+      ctaText: 'Shop Now',
+      ctaAction: () => onNavigate('catalog'),
+    },
+    {
+      image: '/assets/generated/hajj-umrah-promo-banner-1-v2.dim_2400x900.png',
+      title: 'Exclusive Hajj Collection',
+      subtitle: 'Everything you need for a blessed pilgrimage',
+      ctaText: 'Explore Collection',
+      ctaAction: () => onNavigate('catalog', undefined, { usageCategory: 'hajj' }),
+    },
+    {
+      image: '/assets/generated/hajj-umrah-promo-banner-2-v2.dim_2400x900.png',
+      title: 'Umrah Essentials',
+      subtitle: 'Complete your spiritual journey with comfort',
+      ctaText: 'View Products',
+      ctaAction: () => onNavigate('catalog', undefined, { usageCategory: 'umrah' }),
+    },
+  ];
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative h-[70vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-muted/30 to-background">
-        <div className="absolute inset-0 opacity-10">
-          <img
-            src="/assets/generated/fitting-point-pattern.dim_2048x2048.png"
-            alt=""
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto space-y-6">
-          <h1 className="font-serif text-5xl md:text-7xl font-bold text-gold animate-fade-in">
-            Fitting Point
-          </h1>
-          <p className="font-body text-xl md:text-2xl text-muted-foreground animate-slide-up">
-            Premium Hajj & Umrah Essentials
-          </p>
-          <p className="font-body text-lg text-muted-foreground max-w-2xl mx-auto animate-slide-up">
-            Your trusted companion for the sacred journey. Discover quality products crafted with devotion and care.
-          </p>
-          <Button
-            size="lg"
-            className="bg-gold hover:bg-gold/90 text-white mt-6 animate-slide-up"
-            onClick={() => onNavigate('catalog')}
-          >
-            Explore Collection
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
-        </div>
-      </section>
+      {/* Hero Banner Carousel */}
+      <HomepageBannerRail banners={banners} onNavigate={onNavigate} />
 
-      {/* Category Cards */}
-      <section className="py-16 px-4 lg:px-8 xl:px-12 2xl:px-16">
+      {/* Category Cards Section */}
+      <section className="section-spacing bg-background">
         <div className="max-w-7xl mx-auto">
-          <h2 className="font-serif text-3xl md:text-4xl font-bold text-center text-gold mb-12">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-center text-gold mb-12">
             Shop by Category
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
             {homepageCategoryCards.map((category) => (
               <Card
                 key={category.title}
-                className="group cursor-pointer overflow-hidden border-gold/10 hover:border-gold/30 transition-all duration-500 hover:shadow-gold-subtle"
+                className="group cursor-pointer overflow-hidden border-gold/10 hover:border-gold/40 transition-all duration-500 hover:shadow-premium-lg hover:-translate-y-2 bg-card/50 backdrop-blur-sm"
                 onClick={() => onNavigate('catalog', undefined, category.filter)}
               >
                 <div className="relative aspect-square overflow-hidden">
                   <img
                     src={category.image}
                     alt={category.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="font-serif text-2xl font-bold mb-2">{category.title}</h3>
-                    <p className="font-body text-sm opacity-90">{category.description}</p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-500 group-hover:from-black/80" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-6">
+                    <h3 className="font-heading text-2xl md:text-3xl font-bold mb-2 text-center transition-transform duration-500 group-hover:scale-105">
+                      {category.title}
+                    </h3>
+                    <p className="font-body text-sm md:text-base text-center opacity-90 mb-4">
+                      {category.description}
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="border-white/80 text-white hover:bg-gold hover:border-gold hover:text-white transition-all duration-300 backdrop-blur-sm"
+                    >
+                      Explore
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -81,74 +125,90 @@ export default function HomePage({ onNavigate }: HomePageProps) {
         </div>
       </section>
 
-      {/* Featured Products */}
-      {featuredProducts.length > 0 && (
-        <section className="py-16 px-4 lg:px-8 xl:px-12 2xl:px-16 bg-muted/20">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold">
-                Featured Products
-              </h2>
-              <Button
-                variant="outline"
-                className="border-gold text-gold hover:bg-gold hover:text-white"
-                onClick={() => onNavigate('catalog', undefined, { isBestseller: true })}
-              >
-                View All
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
-              ))}
-            </div>
-          </div>
-        </section>
+      <Separator className="my-0" />
+
+      {/* Offers Section */}
+      <OffersSection onNavigate={onNavigate} />
+
+      <Separator className="my-0" />
+
+      {/* Best Sellers */}
+      {bestSellers.length > 0 && (
+        <>
+          <HomepageProductSection
+            title="Best Sellers"
+            products={bestSellers}
+            filter={{ isBestseller: true }}
+            onNavigate={onNavigate}
+          />
+          <Separator className="my-0" />
+        </>
+      )}
+
+      {/* Most Loved */}
+      {mostLoved.length > 0 && (
+        <>
+          <HomepageProductSection
+            title="Most Loved"
+            products={mostLoved}
+            filter={{ isMostLoved: true }}
+            onNavigate={onNavigate}
+          />
+          <Separator className="my-0" />
+        </>
       )}
 
       {/* New Arrivals */}
       {newArrivals.length > 0 && (
-        <section className="py-16 px-4 lg:px-8 xl:px-12 2xl:px-16">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center justify-between mb-12">
-              <h2 className="font-serif text-3xl md:text-4xl font-bold text-gold">
-                New Arrivals
-              </h2>
-              <Button
-                variant="outline"
-                className="border-gold text-gold hover:bg-gold hover:text-white"
-                onClick={() => onNavigate('catalog', undefined, { isNew: true })}
-              >
-                View All
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {newArrivals.map((product) => (
-                <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
-              ))}
-            </div>
-          </div>
-        </section>
+        <>
+          <HomepageProductSection
+            title="New Arrivals"
+            products={newArrivals}
+            filter={{ isNew: true }}
+            onNavigate={onNavigate}
+          />
+          <Separator className="my-0" />
+        </>
       )}
 
-      {/* Call to Action */}
-      <section className="py-20 px-4 lg:px-8 xl:px-12 2xl:px-16 bg-gradient-to-r from-gold/10 via-gold/5 to-gold/10">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          <h2 className="font-serif text-3xl md:text-5xl font-bold text-gold">
-            Prepare for Your Sacred Journey
-          </h2>
-          <p className="font-body text-lg text-muted-foreground">
-            Explore our complete collection of premium Hajj and Umrah essentials
-          </p>
-          <Button
-            size="lg"
-            className="bg-gold hover:bg-gold/90 text-white"
-            onClick={() => onNavigate('catalog')}
-          >
-            Shop Now
-          </Button>
-        </div>
-      </section>
+      {/* Hajj Collection */}
+      {hajjProducts.length > 0 && (
+        <>
+          <HomepageProductSection
+            title="Hajj Essentials"
+            products={hajjProducts}
+            filter={{ usageCategory: 'hajj' }}
+            onNavigate={onNavigate}
+          />
+          <Separator className="my-0" />
+        </>
+      )}
+
+      {/* Umrah Collection */}
+      {umrahProducts.length > 0 && (
+        <>
+          <HomepageProductSection
+            title="Umrah Collection"
+            products={umrahProducts}
+            filter={{ usageCategory: 'umrah' }}
+            onNavigate={onNavigate}
+          />
+          <Separator className="my-0" />
+        </>
+      )}
+
+      {/* Customer Reviews */}
+      <CustomerReviewsSection />
+
+      <Separator className="my-0" />
+
+      {/* Partners */}
+      <PartnersSection />
+
+      <Separator className="my-0" />
+
+      {/* Contact CTA */}
+      <ContactCtaSection onNavigate={onNavigate} />
     </div>
   );
 }

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useSiteContent } from './useSiteContent';
+import { useGetSiteContent } from './useSiteContent';
 
 const THEME_STORAGE_KEY = 'fitting_point_theme_override';
 
 export function useThemeMode() {
-  const { data: siteContent } = useSiteContent();
+  const { data: siteContent } = useGetSiteContent();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {

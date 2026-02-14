@@ -1,6 +1,7 @@
 import { Heart } from 'lucide-react';
 import { SiFacebook, SiX, SiInstagram, SiYoutube } from 'react-icons/si';
 import { Separator } from '@/components/ui/separator';
+import Logo from './Logo';
 import type { CatalogFilter } from '../App';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'shipping' | 'returns';
@@ -12,7 +13,6 @@ interface FooterProps {
 export default function Footer({ onNavigate }: FooterProps) {
   const currentYear = new Date().getFullYear();
   
-  const logoSrc = '/assets/ChatGPT Image Dec 11, 2025, 10_50_00 PM-3.png';
   const appIdentifier = encodeURIComponent(window.location.hostname || 'fitting-point');
 
   const quickLinks = [
@@ -42,11 +42,7 @@ export default function Footer({ onNavigate }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand */}
           <div className="space-y-4">
-            <img
-              src={logoSrc}
-              alt="Fitting Point"
-              className="h-20 w-20 object-contain"
-            />
+            <Logo size="lg" />
             <p className="text-sm text-muted-foreground leading-relaxed font-body">
               Your trusted companion for the sacred journey. Premium Hajj and Umrah essentials crafted with care and devotion.
             </p>

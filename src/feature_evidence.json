@@ -1,4 +1,49 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-fix-the-admin-panel-login-ui-so-it-works-with-internet-identity-instead-of-the-current-non-functional-admin-key-flow-when-the-viewer-is-anonymous-show-a-clear-internet-identity-login-sign-up-prompt-after-login-verify-admin-status-via-iscalleradmin-and-either-enter-the-admin-panel-or-show-an-insufficient-permissions-error-state-with-recovery-actions-retry-reset-logout",
+      "featureTitle": "Fix the admin panel login UI so it works with Internet Identity instead of the current non-functional Admin Key flow: when the viewer is anonymous, show a clear Internet Identity login/sign-up prompt; after login, verify admin status via `isCallerAdmin()` and either enter the admin panel or show an 'insufficient permissions' error state with recovery actions (retry/reset/logout).",
+      "files": [
+        "frontend/src/components/AdminLayout.tsx",
+        "frontend/src/hooks/useAdminSession.ts",
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-minimal-diagnostics-surface-for-admin-auth-failures-when-admin-verification-fails-backend-error-or-authorization-trap-display-the-parsed-error-message-english-and-provide-a-copyable-error-detail-section-suitable-for-sharing-during-support-debugging",
+      "featureTitle": "Add a minimal diagnostics surface for admin auth failures: when admin verification fails (backend error or authorization trap), display the parsed error message (English) and provide a copyable error detail section suitable for sharing during support/debugging.",
+      "files": [
+        "frontend/src/components/AdminLayout.tsx",
+        "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
+        "frontend/src/utils/adminAuthError.ts"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    }
+  ]
 }

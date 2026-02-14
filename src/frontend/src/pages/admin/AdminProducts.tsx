@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Trash2, Edit, Search, ArrowUpDown } from 'lucide-react';
+import { Plus, Trash2, Edit, Search, ArrowUpDown, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import AdminLayout from '../../components/AdminLayout';
 import {
@@ -17,9 +20,11 @@ import {
   useDeleteProduct,
 } from '../../hooks/useQueries';
 import type { Product, ProductType } from '../../backend';
-import { ExternalBlob, ProductBadge, UsageCategory } from '../../backend';
+import { ExternalBlob, UsageCategory } from '../../backend';
+import { parseAdminAuthError } from '../../utils/adminAuthError';
+import { formatINR } from '../../utils/currency';
 
-type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings';
+type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings' | 'shipping' | 'returns';
 
 interface AdminProductsProps {
   onNavigate: (page: Page) => void;
@@ -40,6 +45,8 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,12 +56,12 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
     category: '',
     sizes: '',
     colors: '',
-    badge: '' as '' | 'new' | 'bestseller',
-    isNewProduct: false,
-    isBestseller: false,
     productType: '' as '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other',
     productTypeOther: '',
     usageCategory: '' as '' | 'hajj' | 'umrah' | 'both',
+    isBestseller: false,
+    isMostLoved: false,
+    isNewProduct: false,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -66,7 +73,8 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
     let filtered = products.filter((product) => {
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase());
+        product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = !categoryFilter || product.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });
@@ -157,7 +165,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       }
 
       const productData: Product = {
-        id: editingProduct?.id || '',
+        id: editingProduct?.id || `product-${Date.now()}`,
         name: formData.name.trim(),
         shortDescriptor: formData.shortDescriptor.trim(),
         description: formData.description.trim(),
@@ -166,15 +174,15 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
         sizes: formData.sizes.split(',').map((s) => s.trim()).filter(Boolean),
         colors: formData.colors.split(',').map((c) => c.trim()).filter(Boolean),
         images: imageBlobs,
-        badge: formData.badge ? (formData.badge === 'new' ? ProductBadge.new_ : ProductBadge.bestseller) : undefined,
-        isNewProduct: formData.isNewProduct,
-        isBestseller: formData.isBestseller,
         productType,
         usageCategory,
+        isBestseller: formData.isBestseller,
+        isMostLoved: formData.isMostLoved,
+        isNewProduct: formData.isNewProduct,
       };
 
       if (editingProduct) {
-        await updateProduct.mutateAsync(productData);
+        await updateProduct.mutateAsync({ productId: editingProduct.id, product: productData });
         toast.success('Product updated successfully');
       } else {
         await addProduct.mutateAsync(productData);
@@ -184,21 +192,71 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       setDialogOpen(false);
       resetForm();
     } catch (error: any) {
-      toast.error(error.message || 'Failed to save product');
+      const parsed = parseAdminAuthError(error);
+      toast.error(parsed.message, {
+        description: parsed.nextSteps,
+      });
     } finally {
       setUploading(false);
       setUploadProgress(0);
     }
   };
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    
+    let productTypeValue: '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other' = '';
+    let productTypeOther = '';
+    if (product.productType) {
+      if (product.productType.__kind__ === 'other') {
+        productTypeValue = 'other';
+        productTypeOther = product.productType.other;
+      } else {
+        productTypeValue = product.productType.__kind__ as 'clothing' | 'accessory' | 'footwear' | 'electronics';
+      }
+    }
+
+    let usageCategoryValue: '' | 'hajj' | 'umrah' | 'both' = '';
+    if (product.usageCategory) {
+      usageCategoryValue = product.usageCategory as 'hajj' | 'umrah' | 'both';
+    }
+
+    setFormData({
+      name: product.name,
+      shortDescriptor: product.shortDescriptor,
+      description: product.description,
+      price: (Number(product.price) / 100).toFixed(2),
+      category: product.category,
+      sizes: product.sizes.join(', '),
+      colors: product.colors.join(', '),
+      productType: productTypeValue,
+      productTypeOther,
+      usageCategory: usageCategoryValue,
+      isBestseller: product.isBestseller,
+      isMostLoved: product.isMostLoved,
+      isNewProduct: product.isNewProduct,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (productId: string) => {
+    setProductToDelete(productId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!productToDelete) return;
 
     try {
-      await deleteProduct.mutateAsync(productId);
+      await deleteProduct.mutateAsync(productToDelete);
       toast.success('Product deleted successfully');
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete product');
+      const parsed = parseAdminAuthError(error);
+      toast.error(parsed.message, {
+        description: parsed.nextSteps,
+      });
     }
   };
 
@@ -211,189 +269,113 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       category: '',
       sizes: '',
       colors: '',
-      badge: '',
-      isNewProduct: false,
-      isBestseller: false,
       productType: '',
       productTypeOther: '',
       usageCategory: '',
+      isBestseller: false,
+      isMostLoved: false,
+      isNewProduct: false,
     });
     setImageFiles([]);
     setEditingProduct(null);
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    
-    let badgeValue: '' | 'new' | 'bestseller' = '';
-    if (product.badge === ProductBadge.new_) badgeValue = 'new';
-    else if (product.badge === ProductBadge.bestseller) badgeValue = 'bestseller';
-    
-    let productTypeValue: '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other' = '';
-    let productTypeOther = '';
-    if (product.productType) {
-      if (product.productType.__kind__ === 'clothing') productTypeValue = 'clothing';
-      else if (product.productType.__kind__ === 'accessory') productTypeValue = 'accessory';
-      else if (product.productType.__kind__ === 'footwear') productTypeValue = 'footwear';
-      else if (product.productType.__kind__ === 'electronics') productTypeValue = 'electronics';
-      else if (product.productType.__kind__ === 'other') {
-        productTypeValue = 'other';
-        productTypeOther = product.productType.other;
-      }
+  const getThumbnailUrl = (product: Product): string => {
+    if (product.images && product.images.length > 0) {
+      return product.images[0].getDirectURL();
     }
-
-    let usageCategoryValue: '' | 'hajj' | 'umrah' | 'both' = '';
-    if (product.usageCategory) {
-      if (product.usageCategory === UsageCategory.hajj) usageCategoryValue = 'hajj';
-      else if (product.usageCategory === UsageCategory.umrah) usageCategoryValue = 'umrah';
-      else if (product.usageCategory === UsageCategory.both) usageCategoryValue = 'both';
-    }
-    
-    setFormData({
-      name: product.name,
-      shortDescriptor: product.shortDescriptor,
-      description: product.description,
-      price: (Number(product.price) / 100).toFixed(2),
-      category: product.category,
-      sizes: product.sizes.join(', '),
-      colors: product.colors.join(', '),
-      badge: badgeValue,
-      isNewProduct: product.isNewProduct,
-      isBestseller: product.isBestseller,
-      productType: productTypeValue,
-      productTypeOther,
-      usageCategory: usageCategoryValue,
-    });
-    setDialogOpen(true);
+    return '/assets/generated/handbag-luxury.dim_800x800.jpg';
   };
 
   return (
     <AdminLayout currentPage="admin-products" onNavigate={onNavigate} title="Product Management">
       <div className="space-y-6">
-        {/* Header Actions */}
-        <div className="flex justify-between items-center">
-          <h2 className="font-serif text-3xl text-gold">Product Catalog</h2>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Products</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your product catalog
+            </p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetForm();
+          }}>
             <DialogTrigger asChild>
-              <Button className="bg-gold hover:bg-gold/90 text-primary" onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
+              <Button size="lg">
+                <Plus className="mr-2 h-4 w-4" />
                 Add Product
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="font-serif text-2xl text-gold">
-                  {editingProduct ? 'Edit Product' : 'Add New Product'}
-                </DialogTitle>
+                <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Premium Ihram Set"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="shortDescriptor">Short Descriptor *</Label>
-                  <Input
-                    id="shortDescriptor"
-                    value={formData.shortDescriptor}
-                    onChange={(e) => setFormData({ ...formData, shortDescriptor: e.target.value })}
-                    placeholder="Hajj & Umrah Essential"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="Describe the product..."
-                    rows={3}
-                  />
-                </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (USD) *</Label>
+                    <Label htmlFor="name">Name *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (INR) *</Label>
                     <Input
                       id="price"
                       type="number"
                       step="0.01"
-                      min="0"
                       value={formData.price}
                       onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      placeholder="99.99"
                       required
                     />
                   </div>
+                </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="shortDescriptor">Short Description *</Label>
+                  <Input
+                    id="shortDescriptor"
+                    value={formData.shortDescriptor}
+                    onChange={(e) => setFormData({ ...formData, shortDescriptor: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Full Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="category">Category *</Label>
                     <Input
                       id="category"
                       value={formData.category}
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      placeholder="Ihram"
                       required
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sizes">Sizes (comma-separated) *</Label>
-                    <Input
-                      id="sizes"
-                      value={formData.sizes}
-                      onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
-                      placeholder="S, M, L, XL"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="colors">Colors (comma-separated) *</Label>
-                    <Input
-                      id="colors"
-                      value={formData.colors}
-                      onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
-                      placeholder="White, Black, Beige"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="badge">Badge</Label>
-                    <Select value={formData.badge} onValueChange={(value) => setFormData({ ...formData, badge: value as '' | 'new' | 'bestseller' })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select badge" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        <SelectItem value="new">New</SelectItem>
-                        <SelectItem value="bestseller">Bestseller</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="productType">Product Type</Label>
-                    <Select value={formData.productType} onValueChange={(value) => setFormData({ ...formData, productType: value as '' | 'clothing' | 'accessory' | 'footwear' | 'electronics' | 'other' })}>
+                    <Select
+                      value={formData.productType}
+                      onValueChange={(value) => setFormData({ ...formData, productType: value as any })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
                         <SelectItem value="clothing">Clothing</SelectItem>
                         <SelectItem value="accessory">Accessory</SelectItem>
                         <SelectItem value="footwear">Footwear</SelectItem>
@@ -406,24 +388,25 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
 
                 {formData.productType === 'other' && (
                   <div className="space-y-2">
-                    <Label htmlFor="productTypeOther">Other Product Type</Label>
+                    <Label htmlFor="productTypeOther">Specify Product Type</Label>
                     <Input
                       id="productTypeOther"
                       value={formData.productTypeOther}
                       onChange={(e) => setFormData({ ...formData, productTypeOther: e.target.value })}
-                      placeholder="Specify product type"
                     />
                   </div>
                 )}
 
                 <div className="space-y-2">
                   <Label htmlFor="usageCategory">Usage Category</Label>
-                  <Select value={formData.usageCategory} onValueChange={(value) => setFormData({ ...formData, usageCategory: value as '' | 'hajj' | 'umrah' | 'both' })}>
+                  <Select
+                    value={formData.usageCategory}
+                    onValueChange={(value) => setFormData({ ...formData, usageCategory: value as any })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select usage" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
                       <SelectItem value="hajj">Hajj</SelectItem>
                       <SelectItem value="umrah">Umrah</SelectItem>
                       <SelectItem value="both">Both</SelectItem>
@@ -431,61 +414,118 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                   </Select>
                 </div>
 
-                <div className="flex gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isNewProduct"
-                      checked={formData.isNewProduct}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isNewProduct: checked as boolean })}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sizes">Sizes (comma-separated)</Label>
+                    <Input
+                      id="sizes"
+                      value={formData.sizes}
+                      onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
+                      placeholder="S, M, L, XL"
                     />
-                    <Label htmlFor="isNewProduct" className="cursor-pointer">New Product</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isBestseller"
-                      checked={formData.isBestseller}
-                      onCheckedChange={(checked) => setFormData({ ...formData, isBestseller: checked as boolean })}
+                  <div className="space-y-2">
+                    <Label htmlFor="colors">Colors (comma-separated)</Label>
+                    <Input
+                      id="colors"
+                      value={formData.colors}
+                      onChange={(e) => setFormData({ ...formData, colors: e.target.value })}
+                      placeholder="White, Black, Beige"
                     />
-                    <Label htmlFor="isBestseller" className="cursor-pointer">Bestseller</Label>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Product Flags</Label>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isBestseller"
+                        checked={formData.isBestseller}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, isBestseller: checked === true })
+                        }
+                      />
+                      <label
+                        htmlFor="isBestseller"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Best Seller
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isMostLoved"
+                        checked={formData.isMostLoved}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, isMostLoved: checked === true })
+                        }
+                      />
+                      <label
+                        htmlFor="isMostLoved"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Most Loved
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isNewProduct"
+                        checked={formData.isNewProduct}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, isNewProduct: checked === true })
+                        }
+                      />
+                      <label
+                        htmlFor="isNewProduct"
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        New Arrival
+                      </label>
+                    </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="images">Images {!editingProduct && '*'}</Label>
+                  <Label htmlFor="images">Product Images {!editingProduct && '*'}</Label>
                   <Input
                     id="images"
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
-                    required={!editingProduct}
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setImageFiles(files);
+                    }}
                   />
-                  {uploading && (
-                    <div className="mt-2">
-                      <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                          className="bg-gold h-2 rounded-full transition-all"
-                          style={{ width: `${uploadProgress}%` }}
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">Uploading: {uploadProgress}%</p>
-                    </div>
+                  {imageFiles.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {imageFiles.length} file(s) selected
+                    </p>
                   )}
                   {editingProduct && imageFiles.length === 0 && (
-                    <div className="mt-2 grid grid-cols-4 gap-2">
-                      {editingProduct.images.map((img, idx) => (
-                        <img
-                          key={idx}
-                          src={img.getDirectURL()}
-                          alt={`Product ${idx + 1}`}
-                          className="w-full h-20 object-cover rounded-md"
-                        />
-                      ))}
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Current: {editingProduct.images.length} image(s) - Upload new files to replace
+                    </p>
                   )}
                 </div>
 
-                <div className="flex justify-end gap-2 pt-4">
+                {uploading && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4">
                   <Button
                     type="button"
                     variant="outline"
@@ -493,11 +533,12 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                       setDialogOpen(false);
                       resetForm();
                     }}
+                    disabled={uploading}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" className="bg-gold hover:bg-gold/90 text-primary" disabled={uploading}>
-                    {uploading ? 'Uploading...' : editingProduct ? 'Update' : 'Add'}
+                  <Button type="submit" disabled={uploading}>
+                    {uploading ? 'Uploading...' : editingProduct ? 'Update Product' : 'Add Product'}
                   </Button>
                 </div>
               </form>
@@ -505,139 +546,212 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
           </Dialog>
         </div>
 
-        {/* Search and Filters */}
+        {/* Filters */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <CardHeader>
+            <CardTitle>Filters & Search</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="search">Search</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="search"
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={categoryFilter === '' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCategoryFilter('')}
-                  className={categoryFilter === '' ? 'bg-gold hover:bg-gold/90 text-primary' : ''}
-                >
-                  All Categories
-                </Button>
-                {categories.map((category) => (
+              <div className="space-y-2">
+                <Label htmlFor="categoryFilter">Category</Label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger id="categoryFilter">
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Sort By</Label>
+                <div className="flex gap-2">
                   <Button
-                    key={category}
-                    variant={categoryFilter === category ? 'default' : 'outline'}
+                    variant={sortField === 'name' ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setCategoryFilter(category)}
-                    className={categoryFilter === category ? 'bg-gold hover:bg-gold/90 text-primary' : ''}
+                    onClick={() => toggleSort('name')}
+                    className="flex-1"
                   >
-                    {category}
+                    Name
+                    {sortField === 'name' && (
+                      <ArrowUpDown className="ml-2 h-3 w-3" />
+                    )}
                   </Button>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleSort('name')}
-                  className={sortField === 'name' ? 'border-gold text-gold' : ''}
-                >
-                  Name
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleSort('price')}
-                  className={sortField === 'price' ? 'border-gold text-gold' : ''}
-                >
-                  Price
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleSort('category')}
-                  className={sortField === 'category' ? 'border-gold text-gold' : ''}
-                >
-                  Category
-                  <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
+                  <Button
+                    variant={sortField === 'price' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => toggleSort('price')}
+                    className="flex-1"
+                  >
+                    Price
+                    {sortField === 'price' && (
+                      <ArrowUpDown className="ml-2 h-3 w-3" />
+                    )}
+                  </Button>
+                  <Button
+                    variant={sortField === 'category' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => toggleSort('category')}
+                    className="flex-1"
+                  >
+                    Category
+                    {sortField === 'category' && (
+                      <ArrowUpDown className="ml-2 h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Products List */}
+        {/* Products Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-serif text-2xl text-gold">
+            <CardTitle>
               Products ({filteredAndSortedProducts.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="text-center py-12">
-                <div className="h-12 w-12 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-muted-foreground mt-4">Loading products...</p>
+              <div className="text-center py-12 text-muted-foreground">
+                Loading products...
               </div>
             ) : filteredAndSortedProducts.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
-                {searchTerm || categoryFilter ? 'No products match your filters.' : 'No products yet. Add your first one!'}
+                {searchTerm || categoryFilter ? 'No products match your filters' : 'No products yet. Add your first product to get started.'}
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredAndSortedProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex gap-4 p-4 border border-gold/20 rounded-lg hover:border-gold transition-colors"
-                  >
-                    <img
-                      src={product.images[0]?.getDirectURL()}
-                      alt={product.name}
-                      className="w-24 h-24 object-cover rounded-md"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-serif text-lg text-gold">{product.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-1">{product.shortDescriptor}</p>
-                      <p className="text-sm text-muted-foreground line-clamp-1">{product.description}</p>
-                      <div className="flex gap-4 mt-2 text-sm">
-                        <span className="text-gold font-semibold">${(Number(product.price) / 100).toFixed(2)}</span>
-                        <span className="text-muted-foreground">{product.category}</span>
-                        <span className="text-muted-foreground">{product.sizes.length} sizes</span>
-                        <span className="text-muted-foreground">{product.colors.length} colors</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleEdit(product)}
-                        className="text-gold hover:text-gold/80"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(product.id)}
-                        className="text-destructive hover:text-destructive/80"
-                        disabled={deleteProduct.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-20">Image</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead>Flags</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAndSortedProducts.map((product) => (
+                      <TableRow key={product.id}>
+                        <TableCell>
+                          <div className="w-16 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+                            {product.images && product.images.length > 0 ? (
+                              <img
+                                src={getThumbnailUrl(product)}
+                                alt={product.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-sm text-muted-foreground line-clamp-1">
+                              {product.shortDescriptor}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{product.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatINR(Number(product.price) / 100)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {product.isBestseller && (
+                              <Badge variant="secondary" className="text-xs">
+                                Best Seller
+                              </Badge>
+                            )}
+                            {product.isMostLoved && (
+                              <Badge variant="secondary" className="text-xs">
+                                Most Loved
+                              </Badge>
+                            )}
+                            {product.isNewProduct && (
+                              <Badge variant="secondary" className="text-xs">
+                                New
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(product)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(product.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product from your catalog.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProductToDelete(null)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Product
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminLayout>
   );
 }

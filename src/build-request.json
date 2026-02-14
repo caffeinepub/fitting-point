@@ -1,67 +1,91 @@
 {
   "kind": "build_request",
-  "title": "Fix admin email/password login rejecting valid credentials",
+  "title": "Fix broken admin login/sign-up (Internet Identity + admin role bootstrapping)",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix backend admin authentication so that logging in with the configured admin credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not incorrectly fail with an invalid-credentials error.",
+      "text": "Ensure the backend exposes an `isCallerAdmin()` method used by the frontend and that it returns `true` only when the caller has the admin role.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "STILL\nInvalid email or password. Please check your credentials and try again."
+          "admin login or sign up is not working"
         ]
       },
       "acceptanceCriteria": [
-        "Calling authenticateAdminWithEmailPassword(\"fitting.point.official@gmail.com\", \"Farhan@456\") succeeds (does not trap) for a non-admin caller and results in isCallerAdmin() returning true for that same caller.",
-        "authenticateAdminWithEmailPassword trims the provided email and password before comparing them to the stored values.",
-        "Email comparison is case-insensitive (e.g., \"Fitting.Point.Official@gmail.com\" is accepted if the password matches).",
-        "If either credential is actually incorrect, authenticateAdminWithEmailPassword traps with an authentication-failure message that the frontend will classify as invalid credentials (e.g., contains \"Authentication failed\" or \"Check your credentials\").",
-        "Authentication does not require calling unlockBootstrapAdminPrivileges first; a fresh deployment with only the configured email/password supports admin login."
+        "Calling `actor.isCallerAdmin()` from the frontend succeeds (no missing method / no candid mismatch).",
+        "`isCallerAdmin()` returns `false` for non-admin principals and `true` for admin principals."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the admin login UI continues to display the message \"Invalid email or password. Please check your credentials and try again.\" only when the backend indicates invalid credentials, and displays a non-credential-related error message for other backend failures.",
-      "target": "frontend",
+      "text": "Implement an admin bootstrapping path so that admin login can succeed on a fresh deployment: if there are no admins yet, the first authenticated (non-anonymous) caller who attempts to access admin functionality is granted the admin role.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages"
         ],
         "quotes": [
-          "Invalid email or password. Please check your credentials and try again."
+          "admin login or sign up is not working"
         ]
       },
       "acceptanceCriteria": [
-        "When backend authentication fails due to wrong email/password, the UI displays exactly: \"Invalid email or password. Please check your credentials and try again.\"",
-        "When backend authentication fails for reasons other than invalid credentials (e.g., actor not available, unauthorized, initialization issues), the UI does not display the invalid-credentials message and instead shows a generic failure message (existing behavior via parseAdminAuthError is preserved)."
+        "On a fresh canister with no admins configured, the first non-anonymous principal to trigger the bootstrap flow becomes admin and `isCallerAdmin()` returns `true` for that principal afterward.",
+        "Anonymous principals are never granted admin during bootstrapping.",
+        "After at least one admin exists, no additional principals are automatically promoted to admin."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Fix the admin panel login UI so it works with Internet Identity instead of the current non-functional Admin Key flow: when the viewer is anonymous, show a clear Internet Identity login/sign-up prompt; after login, verify admin status via `isCallerAdmin()` and either enter the admin panel or show an 'insufficient permissions' error state with recovery actions (retry/reset/logout).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "admin login or sign up is not working"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If the user is not logged in (anonymous), the admin page shows a 'Log in with Internet Identity' call-to-action (English text) and does not misleadingly require an Admin Key.",
+        "After successful Internet Identity login, the app re-checks `isCallerAdmin()` and navigates into the admin dashboard when the caller is an admin.",
+        "If the logged-in user is not an admin, the UI shows an English error message indicating they do not have admin permissions and provides at least one recovery action (e.g., logout/switch account, retry verification, reset admin session)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add a minimal diagnostics surface for admin auth failures: when admin verification fails (backend error or authorization trap), display the parsed error message (English) and provide a copyable error detail section suitable for sharing during support/debugging.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "recent-messages"
+        ],
+        "quotes": [
+          "admin login or sign up is not working"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When `useIsCallerAdmin()` errors, the admin gate screen shows an English summary plus a collapsible/copyable technical detail (e.g., the raw error message) without crashing the app.",
+        "The existing `parseAdminAuthError` classification is used to drive user-facing messaging."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; add migration.mo only if a state upgrade is required.",
-    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT."
+    "Backend must remain a single Motoko actor (all logic in backend/main.mo); add backend/migration.mo only if state schema changes require it.",
+    "Do not edit files under frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose them instead).",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Add new authentication providers (only the existing email/password admin flow is in scope).",
-    "Add or change admin UI features beyond what is necessary to make login succeed and show correct error messages.",
-    "Introduce external databases or third-party services."
+    "Adding external databases (e.g., Supabase) or any off-chain storage.",
+    "Implementing third-party authentication providers beyond Internet Identity.",
+    "Building real-time admin presence or multi-admin invitation workflows."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

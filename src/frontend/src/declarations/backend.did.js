@@ -20,18 +20,11 @@ export const _CaffeineStorageRefillResult = IDL.Record({
   'topped_up_amount' : IDL.Opt(IDL.Nat),
 });
 export const ExternalBlob = IDL.Vec(IDL.Nat8);
-export const Banner = IDL.Record({
-  'id' : IDL.Text,
-  'link' : IDL.Opt(IDL.Text),
-  'text' : IDL.Text,
-  'image' : ExternalBlob,
-});
-export const ProductId = IDL.Text;
 export const LookbookImage = IDL.Record({
   'id' : IDL.Text,
   'description' : IDL.Text,
   'image' : ExternalBlob,
-  'taggedProducts' : IDL.Vec(ProductId),
+  'taggedProducts' : IDL.Vec(IDL.Text),
 });
 export const UsageCategory = IDL.Variant({
   'both' : IDL.Null,
@@ -45,36 +38,27 @@ export const ProductType = IDL.Variant({
   'footwear' : IDL.Null,
   'electronics' : IDL.Null,
 });
-export const Size = IDL.Text;
-export const Category = IDL.Text;
-export const ProductBadge = IDL.Variant({
-  'new' : IDL.Null,
-  'bestseller' : IDL.Null,
-});
-export const Color = IDL.Text;
-export const Price = IDL.Nat;
 export const Product = IDL.Record({
-  'id' : ProductId,
+  'id' : IDL.Text,
   'isNewProduct' : IDL.Bool,
   'name' : IDL.Text,
   'shortDescriptor' : IDL.Text,
   'usageCategory' : IDL.Opt(UsageCategory),
   'description' : IDL.Text,
   'productType' : IDL.Opt(ProductType),
-  'sizes' : IDL.Vec(Size),
+  'sizes' : IDL.Vec(IDL.Text),
+  'isMostLoved' : IDL.Bool,
   'isBestseller' : IDL.Bool,
-  'category' : Category,
-  'badge' : IDL.Opt(ProductBadge),
-  'colors' : IDL.Vec(Color),
-  'price' : Price,
+  'category' : IDL.Text,
+  'colors' : IDL.Vec(IDL.Text),
+  'price' : IDL.Nat,
   'images' : IDL.Vec(ExternalBlob),
 });
-export const Quantity = IDL.Nat;
 export const CartItem = IDL.Record({
-  'color' : Color,
-  'size' : Size,
-  'productId' : ProductId,
-  'quantity' : Quantity,
+  'color' : IDL.Text,
+  'size' : IDL.Text,
+  'productId' : IDL.Text,
+  'quantity' : IDL.Nat,
 });
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
@@ -83,25 +67,17 @@ export const UserRole = IDL.Variant({
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text });
 export const Cart = IDL.Vec(CartItem);
-export const EditableText = IDL.Record({
-  'lastEdited' : IDL.Opt(IDL.Int),
-  'content' : IDL.Text,
-  'lastPublished' : IDL.Opt(IDL.Int),
-  'isDraft' : IDL.Bool,
-});
 export const SiteContentBlock = IDL.Record({
   'title' : IDL.Text,
   'content' : IDL.Text,
   'image' : IDL.Opt(ExternalBlob),
 });
 export const SiteContent = IDL.Record({
-  'banners' : IDL.Vec(Banner),
-  'heroText' : EditableText,
+  'heroText' : IDL.Text,
   'footerItems' : IDL.Vec(IDL.Text),
   'sections' : IDL.Vec(SiteContentBlock),
-  'previewMode' : IDL.Bool,
   'darkModeEnabled' : IDL.Bool,
-  'contactDetails' : EditableText,
+  'contactDetails' : IDL.Text,
 });
 
 export const idlService = IDL.Service({
@@ -132,55 +108,38 @@ export const idlService = IDL.Service({
     ),
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'addBanner' : IDL.Func(
-      [ExternalBlob, IDL.Text, IDL.Opt(IDL.Text)],
-      [Banner],
-      [],
-    ),
   'addLookbookImage' : IDL.Func([LookbookImage], [], []),
   'addProduct' : IDL.Func([Product], [], []),
   'addToCart' : IDL.Func([CartItem], [], []),
-  'addToWishlist' : IDL.Func([ProductId], [], []),
-  'adminDeleteProduct' : IDL.Func([ProductId], [], []),
-  'adminUpdateProduct' : IDL.Func([Product], [], []),
+  'adminDeleteProduct' : IDL.Func([IDL.Text], [], []),
+  'adminUpdateProduct' : IDL.Func([IDL.Text, Product], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-  'authenticateAdminWithEmailPassword' : IDL.Func([IDL.Text, IDL.Text], [], []),
-  'deleteBanner' : IDL.Func([IDL.Text], [], []),
   'filterProductsByCategory' : IDL.Func(
-      [Category],
+      [IDL.Text],
       [IDL.Vec(Product)],
       ['query'],
     ),
-  'filterProductsByColor' : IDL.Func([Color], [IDL.Vec(Product)], ['query']),
-  'filterProductsBySize' : IDL.Func([Size], [IDL.Vec(Product)], ['query']),
   'getAllLookbookImages' : IDL.Func([], [IDL.Vec(LookbookImage)], ['query']),
   'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
-  'getBanners' : IDL.Func([], [IDL.Vec(Banner)], ['query']),
+  'getBestsellers' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCart' : IDL.Func([], [Cart], ['query']),
   'getLookbookImage' : IDL.Func([IDL.Text], [LookbookImage], ['query']),
-  'getProduct' : IDL.Func([ProductId], [Product], ['query']),
+  'getMostLovedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getNewProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+  'getProduct' : IDL.Func([IDL.Text], [Product], ['query']),
   'getSiteContent' : IDL.Func([], [SiteContent], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
-  'getWishlist' : IDL.Func([], [IDL.Vec(ProductId)], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'publishSiteContent' : IDL.Func([], [], []),
-  'removeFromCart' : IDL.Func([ProductId], [], []),
+  'isReady' : IDL.Func([], [IDL.Bool], ['query']),
+  'removeFromCart' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'saveDraft' : IDL.Func([IDL.Text, IDL.Bool], [], []),
-  'searchProducts' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
-  'toggleDarkMode' : IDL.Func([IDL.Bool], [], []),
-  'unlockBootstrapAdminPrivileges' : IDL.Func([IDL.Text, IDL.Text], [], []),
-  'updateBanner' : IDL.Func(
-      [IDL.Text, IDL.Opt(ExternalBlob), IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
-      [Banner],
-      [],
-    ),
+  'updateSiteContent' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool], [], []),
 });
 
 export const idlInitArgs = [];
@@ -198,18 +157,11 @@ export const idlFactory = ({ IDL }) => {
     'topped_up_amount' : IDL.Opt(IDL.Nat),
   });
   const ExternalBlob = IDL.Vec(IDL.Nat8);
-  const Banner = IDL.Record({
-    'id' : IDL.Text,
-    'link' : IDL.Opt(IDL.Text),
-    'text' : IDL.Text,
-    'image' : ExternalBlob,
-  });
-  const ProductId = IDL.Text;
   const LookbookImage = IDL.Record({
     'id' : IDL.Text,
     'description' : IDL.Text,
     'image' : ExternalBlob,
-    'taggedProducts' : IDL.Vec(ProductId),
+    'taggedProducts' : IDL.Vec(IDL.Text),
   });
   const UsageCategory = IDL.Variant({
     'both' : IDL.Null,
@@ -223,36 +175,27 @@ export const idlFactory = ({ IDL }) => {
     'footwear' : IDL.Null,
     'electronics' : IDL.Null,
   });
-  const Size = IDL.Text;
-  const Category = IDL.Text;
-  const ProductBadge = IDL.Variant({
-    'new' : IDL.Null,
-    'bestseller' : IDL.Null,
-  });
-  const Color = IDL.Text;
-  const Price = IDL.Nat;
   const Product = IDL.Record({
-    'id' : ProductId,
+    'id' : IDL.Text,
     'isNewProduct' : IDL.Bool,
     'name' : IDL.Text,
     'shortDescriptor' : IDL.Text,
     'usageCategory' : IDL.Opt(UsageCategory),
     'description' : IDL.Text,
     'productType' : IDL.Opt(ProductType),
-    'sizes' : IDL.Vec(Size),
+    'sizes' : IDL.Vec(IDL.Text),
+    'isMostLoved' : IDL.Bool,
     'isBestseller' : IDL.Bool,
-    'category' : Category,
-    'badge' : IDL.Opt(ProductBadge),
-    'colors' : IDL.Vec(Color),
-    'price' : Price,
+    'category' : IDL.Text,
+    'colors' : IDL.Vec(IDL.Text),
+    'price' : IDL.Nat,
     'images' : IDL.Vec(ExternalBlob),
   });
-  const Quantity = IDL.Nat;
   const CartItem = IDL.Record({
-    'color' : Color,
-    'size' : Size,
-    'productId' : ProductId,
-    'quantity' : Quantity,
+    'color' : IDL.Text,
+    'size' : IDL.Text,
+    'productId' : IDL.Text,
+    'quantity' : IDL.Nat,
   });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
@@ -261,25 +204,17 @@ export const idlFactory = ({ IDL }) => {
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text });
   const Cart = IDL.Vec(CartItem);
-  const EditableText = IDL.Record({
-    'lastEdited' : IDL.Opt(IDL.Int),
-    'content' : IDL.Text,
-    'lastPublished' : IDL.Opt(IDL.Int),
-    'isDraft' : IDL.Bool,
-  });
   const SiteContentBlock = IDL.Record({
     'title' : IDL.Text,
     'content' : IDL.Text,
     'image' : IDL.Opt(ExternalBlob),
   });
   const SiteContent = IDL.Record({
-    'banners' : IDL.Vec(Banner),
-    'heroText' : EditableText,
+    'heroText' : IDL.Text,
     'footerItems' : IDL.Vec(IDL.Text),
     'sections' : IDL.Vec(SiteContentBlock),
-    'previewMode' : IDL.Bool,
     'darkModeEnabled' : IDL.Bool,
-    'contactDetails' : EditableText,
+    'contactDetails' : IDL.Text,
   });
   
   return IDL.Service({
@@ -310,59 +245,38 @@ export const idlFactory = ({ IDL }) => {
       ),
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'addBanner' : IDL.Func(
-        [ExternalBlob, IDL.Text, IDL.Opt(IDL.Text)],
-        [Banner],
-        [],
-      ),
     'addLookbookImage' : IDL.Func([LookbookImage], [], []),
     'addProduct' : IDL.Func([Product], [], []),
     'addToCart' : IDL.Func([CartItem], [], []),
-    'addToWishlist' : IDL.Func([ProductId], [], []),
-    'adminDeleteProduct' : IDL.Func([ProductId], [], []),
-    'adminUpdateProduct' : IDL.Func([Product], [], []),
+    'adminDeleteProduct' : IDL.Func([IDL.Text], [], []),
+    'adminUpdateProduct' : IDL.Func([IDL.Text, Product], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
-    'authenticateAdminWithEmailPassword' : IDL.Func(
-        [IDL.Text, IDL.Text],
-        [],
-        [],
-      ),
-    'deleteBanner' : IDL.Func([IDL.Text], [], []),
     'filterProductsByCategory' : IDL.Func(
-        [Category],
+        [IDL.Text],
         [IDL.Vec(Product)],
         ['query'],
       ),
-    'filterProductsByColor' : IDL.Func([Color], [IDL.Vec(Product)], ['query']),
-    'filterProductsBySize' : IDL.Func([Size], [IDL.Vec(Product)], ['query']),
     'getAllLookbookImages' : IDL.Func([], [IDL.Vec(LookbookImage)], ['query']),
     'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
-    'getBanners' : IDL.Func([], [IDL.Vec(Banner)], ['query']),
+    'getBestsellers' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCart' : IDL.Func([], [Cart], ['query']),
     'getLookbookImage' : IDL.Func([IDL.Text], [LookbookImage], ['query']),
-    'getProduct' : IDL.Func([ProductId], [Product], ['query']),
+    'getMostLovedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getNewProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
+    'getProduct' : IDL.Func([IDL.Text], [Product], ['query']),
     'getSiteContent' : IDL.Func([], [SiteContent], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
-    'getWishlist' : IDL.Func([], [IDL.Vec(ProductId)], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'publishSiteContent' : IDL.Func([], [], []),
-    'removeFromCart' : IDL.Func([ProductId], [], []),
+    'isReady' : IDL.Func([], [IDL.Bool], ['query']),
+    'removeFromCart' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'saveDraft' : IDL.Func([IDL.Text, IDL.Bool], [], []),
-    'searchProducts' : IDL.Func([IDL.Text], [IDL.Vec(Product)], ['query']),
-    'toggleDarkMode' : IDL.Func([IDL.Bool], [], []),
-    'unlockBootstrapAdminPrivileges' : IDL.Func([IDL.Text, IDL.Text], [], []),
-    'updateBanner' : IDL.Func(
-        [IDL.Text, IDL.Opt(ExternalBlob), IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
-        [Banner],
-        [],
-      ),
+    'updateSiteContent' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool], [], []),
   });
 };
 

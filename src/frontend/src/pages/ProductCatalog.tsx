@@ -1,225 +1,297 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { useGetAllProducts } from '../hooks/useQueries';
 import ProductCard from '../components/ProductCard';
-import type { Product } from '../backend';
 import type { CatalogFilter } from '../App';
 
-type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact';
+type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'shipping' | 'returns';
 
 interface ProductCatalogProps {
   onNavigate: (page: Page, productId?: string, filter?: CatalogFilter) => void;
   initialFilter?: CatalogFilter;
 }
 
-export default function ProductCatalog({ onNavigate, initialFilter = {} }: ProductCatalogProps) {
+type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc';
+
+export default function ProductCatalog({ onNavigate, initialFilter }: ProductCatalogProps) {
   const { data: allProducts = [], isLoading } = useGetAllProducts();
-  const [filters, setFilters] = useState<CatalogFilter>(initialFilter);
-  const [sortBy, setSortBy] = useState<string>('featured');
+  const [filters, setFilters] = useState<CatalogFilter>(initialFilter || {});
+  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
-  useEffect(() => {
-    setFilters(initialFilter);
-  }, [initialFilter]);
+  const categories = useMemo(() => {
+    const cats = new Set(allProducts.map((p) => p.category));
+    return Array.from(cats).sort();
+  }, [allProducts]);
 
-  const categories = Array.from(new Set(allProducts.map((p) => p.category)));
-  const productTypes = ['clothing', 'accessory', 'footwear', 'electronics'];
-  const usageCategories = ['hajj', 'umrah', 'both'];
+  const productTypes = useMemo(() => {
+    const types = new Set<string>();
+    allProducts.forEach((p) => {
+      if (p.productType) {
+        if (p.productType.__kind__ === 'other') {
+          types.add(p.productType.other);
+        } else {
+          types.add(p.productType.__kind__);
+        }
+      }
+    });
+    return Array.from(types).sort();
+  }, [allProducts]);
 
-  const filteredProducts = allProducts.filter((product) => {
-    if (filters.category && product.category !== filters.category) return false;
-    
-    // Compare productType strings
-    if (filters.productType) {
-      const productTypeStr = product.productType || '';
-      if (productTypeStr !== filters.productType) return false;
-    }
-    
-    // Compare usageCategory strings
-    if (filters.usageCategory) {
-      const usageCategoryStr = product.usageCategory || '';
-      if (usageCategoryStr !== filters.usageCategory) return false;
-    }
-    
-    if (filters.isNew && !product.isNewProduct) return false;
-    if (filters.isBestseller && !product.isBestseller) return false;
-    return true;
-  });
+  const filteredProducts = useMemo(() => {
+    return allProducts.filter((product) => {
+      if (filters.category && product.category !== filters.category) return false;
+      if (filters.productType) {
+        const productTypeStr = product.productType?.__kind__ === 'other' 
+          ? product.productType.other 
+          : product.productType?.__kind__;
+        if (productTypeStr !== filters.productType) return false;
+      }
+      if (filters.usageCategory && product.usageCategory !== filters.usageCategory) return false;
+      if (filters.isNew && !product.isNewProduct) return false;
+      if (filters.isBestseller && !product.isBestseller) return false;
+      if (filters.isMostLoved && !product.isMostLoved) return false;
+      return true;
+    });
+  }, [allProducts, filters]);
 
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  const sortedProducts = useMemo(() => {
+    const sorted = [...filteredProducts];
     switch (sortBy) {
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
       case 'price-asc':
-        return Number(a.price) - Number(b.price);
+        return sorted.sort((a, b) => Number(a.price) - Number(b.price));
       case 'price-desc':
-        return Number(b.price) - Number(a.price);
-      case 'name':
-        return a.name.localeCompare(b.name);
+        return sorted.sort((a, b) => Number(b.price) - Number(a.price));
       default:
-        return 0;
+        return sorted;
     }
-  });
+  }, [filteredProducts, sortBy]);
 
-  const toggleFilter = (key: keyof CatalogFilter, value: any) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: prev[key] === value ? null : value,
-    }));
+  const handleFilterChange = (key: keyof CatalogFilter, value: string | boolean | undefined) => {
+    setFilters((prev) => {
+      if (value === undefined || value === '') {
+        const { [key]: _, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [key]: value };
+    });
   };
 
   const clearFilters = () => {
     setFilters({});
   };
 
-  const activeFilterCount = Object.values(filters).filter((v) => v !== null && v !== undefined).length;
+  const activeFilterCount = Object.keys(filters).length;
 
   const FilterContent = () => (
     <div className="space-y-6">
-      {/* Category */}
-      <div>
-        <h3 className="font-serif text-lg font-semibold text-gold mb-3">Category</h3>
+      {/* Category Filter */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold text-gold">Category</Label>
         <div className="space-y-2">
-          {categories.map((category) => (
-            <div key={category} className="flex items-center space-x-2">
+          {categories.map((cat) => (
+            <div key={cat} className="flex items-center space-x-2">
               <Checkbox
-                id={`cat-${category}`}
-                checked={filters.category === category}
-                onCheckedChange={() => toggleFilter('category', category)}
+                id={`cat-${cat}`}
+                checked={filters.category === cat}
+                onCheckedChange={(checked) =>
+                  handleFilterChange('category', checked ? cat : undefined)
+                }
               />
-              <Label htmlFor={`cat-${category}`} className="cursor-pointer">
-                {category}
-              </Label>
+              <label
+                htmlFor={`cat-${cat}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                {cat}
+              </label>
             </div>
           ))}
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gold/20" />
 
-      {/* Product Type */}
-      <div>
-        <h3 className="font-serif text-lg font-semibold text-gold mb-3">Product Type</h3>
+      {/* Product Type Filter */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold text-gold">Product Type</Label>
         <div className="space-y-2">
           {productTypes.map((type) => (
             <div key={type} className="flex items-center space-x-2">
               <Checkbox
                 id={`type-${type}`}
                 checked={filters.productType === type}
-                onCheckedChange={() => toggleFilter('productType', type)}
+                onCheckedChange={(checked) =>
+                  handleFilterChange('productType', checked ? type : undefined)
+                }
               />
-              <Label htmlFor={`type-${type}`} className="cursor-pointer capitalize">
+              <label
+                htmlFor={`type-${type}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer capitalize"
+              >
                 {type}
-              </Label>
+              </label>
             </div>
           ))}
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gold/20" />
 
-      {/* Usage Category */}
-      <div>
-        <h3 className="font-serif text-lg font-semibold text-gold mb-3">Usage</h3>
+      {/* Usage Category Filter */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold text-gold">Usage</Label>
         <div className="space-y-2">
-          {usageCategories.map((usage) => (
+          {['hajj', 'umrah', 'both'].map((usage) => (
             <div key={usage} className="flex items-center space-x-2">
               <Checkbox
                 id={`usage-${usage}`}
                 checked={filters.usageCategory === usage}
-                onCheckedChange={() => toggleFilter('usageCategory', usage)}
+                onCheckedChange={(checked) =>
+                  handleFilterChange('usageCategory', checked ? usage : undefined)
+                }
               />
-              <Label htmlFor={`usage-${usage}`} className="cursor-pointer capitalize">
+              <label
+                htmlFor={`usage-${usage}`}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer capitalize"
+              >
                 {usage}
-              </Label>
+              </label>
             </div>
           ))}
         </div>
       </div>
 
-      <Separator />
+      <Separator className="bg-gold/20" />
 
-      {/* Special */}
-      <div>
-        <h3 className="font-serif text-lg font-semibold text-gold mb-3">Special</h3>
+      {/* Special Filters */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold text-gold">Special</Label>
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="new"
-              checked={filters.isNew || false}
-              onCheckedChange={() => toggleFilter('isNew', true)}
+              id="filter-bestseller"
+              checked={filters.isBestseller || false}
+              onCheckedChange={(checked) =>
+                handleFilterChange('isBestseller', checked ? true : undefined)
+              }
             />
-            <Label htmlFor="new" className="cursor-pointer">
-              New Arrivals
-            </Label>
+            <label
+              htmlFor="filter-bestseller"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Best Sellers
+            </label>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="bestseller"
-              checked={filters.isBestseller || false}
-              onCheckedChange={() => toggleFilter('isBestseller', true)}
+              id="filter-mostloved"
+              checked={filters.isMostLoved || false}
+              onCheckedChange={(checked) =>
+                handleFilterChange('isMostLoved', checked ? true : undefined)
+              }
             />
-            <Label htmlFor="bestseller" className="cursor-pointer">
-              Bestsellers
-            </Label>
+            <label
+              htmlFor="filter-mostloved"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              Most Loved
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="filter-new"
+              checked={filters.isNew || false}
+              onCheckedChange={(checked) =>
+                handleFilterChange('isNew', checked ? true : undefined)
+              }
+            />
+            <label
+              htmlFor="filter-new"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            >
+              New Arrivals
+            </label>
           </div>
         </div>
       </div>
 
       {activeFilterCount > 0 && (
-        <Button
-          variant="outline"
-          className="w-full border-gold text-gold hover:bg-gold hover:text-white"
-          onClick={clearFilters}
-        >
-          Clear All Filters
-        </Button>
+        <>
+          <Separator className="bg-gold/20" />
+          <Button
+            variant="outline"
+            className="w-full border-gold text-gold hover:bg-gold hover:text-white"
+            onClick={clearFilters}
+          >
+            <X className="mr-2 h-4 w-4" />
+            Clear All Filters
+          </Button>
+        </>
       )}
     </div>
   );
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen py-8 px-4 lg:px-8 xl:px-12 2xl:px-16">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-serif text-4xl font-bold text-gold mb-2">Our Collection</h1>
+          <h1 className="font-serif text-3xl md:text-4xl font-bold text-gold mb-2">
+            Product Catalog
+          </h1>
           <p className="text-muted-foreground font-body">
             {sortedProducts.length} {sortedProducts.length === 1 ? 'product' : 'products'} found
           </p>
         </div>
 
-        <div className="flex gap-8">
-          {/* Desktop Sidebar */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Desktop Filters Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 bg-card border border-gold/10 rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-serif text-xl font-semibold text-gold">Filters</h2>
+            <div className="sticky top-24 space-y-6 p-6 border border-gold/10 rounded-lg bg-card">
+              <div className="flex items-center justify-between">
+                <h2 className="font-serif text-xl font-bold text-gold">Filters</h2>
                 {activeFilterCount > 0 && (
                   <span className="text-xs bg-gold text-white px-2 py-1 rounded-full">
                     {activeFilterCount}
                   </span>
                 )}
               </div>
+              <Separator className="bg-gold/20" />
               <FilterContent />
             </div>
           </aside>
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Toolbar */}
+            {/* Mobile Filter & Sort Bar */}
             <div className="flex items-center justify-between mb-6 gap-4">
-              {/* Mobile Filter */}
-              <Sheet>
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
                 <SheetTrigger asChild>
                   <Button variant="outline" className="lg:hidden border-gold text-gold">
-                    <Filter className="h-4 w-4 mr-2" />
+                    <Filter className="mr-2 h-4 w-4" />
                     Filters
                     {activeFilterCount > 0 && (
-                      <span className="ml-2 bg-gold text-white text-xs px-2 py-0.5 rounded-full">
+                      <span className="ml-2 bg-gold text-white px-2 py-0.5 rounded-full text-xs">
                         {activeFilterCount}
                       </span>
                     )}
@@ -235,38 +307,35 @@ export default function ProductCatalog({ onNavigate, initialFilter = {} }: Produ
                 </SheetContent>
               </Sheet>
 
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[180px] border-gold/30">
+              <Select value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                <SelectTrigger className="w-[200px] border-gold/30">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="featured">Featured</SelectItem>
+                  <SelectItem value="name-asc">Name: A to Z</SelectItem>
+                  <SelectItem value="name-desc">Name: Z to A</SelectItem>
                   <SelectItem value="price-asc">Price: Low to High</SelectItem>
                   <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                  <SelectItem value="name">Name: A to Z</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Product Grid */}
-            {isLoading ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading products...</p>
-              </div>
-            ) : sortedProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">No products found matching your filters.</p>
-                <Button
-                  variant="outline"
-                  className="border-gold text-gold hover:bg-gold hover:text-white"
-                  onClick={clearFilters}
-                >
-                  Clear Filters
-                </Button>
+            {sortedProducts.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-lg mb-4">No products found</p>
+                {activeFilterCount > 0 && (
+                  <Button
+                    variant="outline"
+                    className="border-gold text-gold hover:bg-gold hover:text-white"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8">
                 {sortedProducts.map((product) => (
                   <ProductCard key={product.id} product={product} onNavigate={onNavigate} />
                 ))}

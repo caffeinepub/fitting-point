@@ -6,6 +6,7 @@ import { useGetAllProducts } from '../hooks/useQueries';
 import { useGuestCart } from '../hooks/useGuestCart';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
 import { toast } from 'sonner';
+import { formatINR } from '../utils/currency';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'checkout';
 
@@ -26,25 +27,21 @@ export default function Cart({ onNavigate }: CartProps) {
   };
 
   const handleRemove = (productId: string) => {
-    try {
-      removeFromGuestCart(productId);
-      toast.success('Removed from cart');
-    } catch (error) {
-      toast.error('Failed to remove item');
-    }
+    removeFromGuestCart(productId);
+    toast.success('Removed from cart');
   };
 
   const subtotal = cart.reduce((sum, item) => {
     const product = getProductDetails(item.productId);
-    return sum + (product ? Number(product.price) * Number(item.quantity) : 0);
+    if (!product) return sum;
+    return sum + Number(product.price) * Number(item.quantity);
   }, 0);
 
   if (productsLoading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4" />
-          <div className="h-32 bg-muted rounded" />
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center">
+          <p className="text-muted-foreground">Loading cart...</p>
         </div>
       </div>
     );
@@ -52,16 +49,15 @@ export default function Cart({ onNavigate }: CartProps) {
 
   if (cart.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="text-center space-y-6 py-16">
-          <h1 className="font-serif text-4xl text-gold">Your Cart is Empty</h1>
-          <p className="text-muted-foreground text-lg">Add some pilgrimage essentials to your collection</p>
+      <div className="container mx-auto px-4 py-16">
+        <div className="text-center space-y-6">
+          <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold">Your Cart</h1>
+          <p className="text-muted-foreground text-lg">Your cart is empty</p>
           <Button
-            size="lg"
-            className="bg-gold text-white hover:bg-gold/90 font-serif"
             onClick={() => onNavigate('catalog')}
+            className="bg-gold hover:bg-gold/90 text-white"
           >
-            Shop Collection
+            Continue Shopping
           </Button>
         </div>
       </div>
@@ -69,58 +65,59 @@ export default function Cart({ onNavigate }: CartProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="font-serif text-4xl md:text-5xl text-gold mb-8">Shopping Cart</h1>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold mb-8">Shopping Cart</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
-          {cart.map((item) => {
+          {cart.map((item, index) => {
             const product = getProductDetails(item.productId);
             if (!product) return null;
 
+            const lineTotal = Number(product.price) * Number(item.quantity);
+
             return (
-              <Card key={`${item.productId}-${item.size}-${item.color}`} className="border-gold/20 hover:border-gold transition-all duration-300">
+              <Card key={index} className="border-gold/20">
                 <CardContent className="p-4">
                   <div className="flex gap-4">
-                    <img
-                      src={product.images[0]?.getDirectURL()}
-                      alt={product.name}
-                      className="w-24 h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                    <div
+                      className="w-24 h-24 rounded-lg overflow-hidden bg-muted/20 flex-shrink-0 cursor-pointer"
                       onClick={() => onNavigate('product', product.id)}
-                    />
-                    <div className="flex-1 space-y-2">
-                      <div className="flex justify-between">
-                        <div>
-                          <h3
-                            className="font-serif text-lg text-gold cursor-pointer hover:underline"
-                            onClick={() => onNavigate('product', product.id)}
-                          >
-                            {product.name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Size: {item.size} | Color: {item.color}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive/80"
-                          onClick={() => handleRemove(item.productId)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm text-muted-foreground">Qty:</span>
-                          <span className="font-semibold">{Number(item.quantity)}</span>
-                        </div>
-                        <p className="font-semibold text-lg">
-                          ${(Number(product.price) * Number(item.quantity)).toFixed(2)}
-                        </p>
-                      </div>
+                    >
+                      <img
+                        src={product.images[0]?.getDirectURL()}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className="font-serif text-lg font-semibold text-foreground hover:text-gold transition-colors cursor-pointer line-clamp-1"
+                        onClick={() => onNavigate('product', product.id)}
+                      >
+                        {product.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Size: {item.size} • Color: {item.color}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Quantity: {Number(item.quantity)}
+                      </p>
+                      <p className="text-lg font-bold text-gold mt-2">
+                        {formatINR(lineTotal)}
+                      </p>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRemove(item.productId)}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -134,32 +131,37 @@ export default function Cart({ onNavigate }: CartProps) {
             <CardContent className="p-6 space-y-4">
               <h2 className="font-serif text-2xl text-gold">Order Summary</h2>
               <Separator className="bg-gold/20" />
+              
               <div className="space-y-2">
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                  <span className="font-semibold">{formatINR(subtotal)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
                   <span className="font-semibold">Calculated at checkout</span>
                 </div>
               </div>
+
               <Separator className="bg-gold/20" />
-              <div className="flex justify-between text-lg">
-                <span className="font-serif text-gold">Total</span>
-                <span className="font-bold text-gold">${subtotal.toFixed(2)}</span>
+
+              <div className="flex justify-between text-lg font-serif">
+                <span>Total</span>
+                <span className="text-gold text-2xl">{formatINR(subtotal)}</span>
               </div>
+
               <Button
+                className="w-full bg-gold hover:bg-gold/90 text-white"
                 size="lg"
-                className="w-full bg-gold text-white hover:bg-gold/90 font-serif flex items-center justify-center gap-2"
                 onClick={() => onNavigate('checkout')}
               >
-                Checkout on WhatsApp
-                <ArrowRight className="h-4 w-4" />
+                Proceed to Checkout
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
+
               <Button
                 variant="outline"
-                className="w-full border-gold text-gold hover:bg-gold/10"
+                className="w-full border-gold/30 text-gold hover:bg-gold/5"
                 onClick={() => onNavigate('catalog')}
               >
                 Continue Shopping

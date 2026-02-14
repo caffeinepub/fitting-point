@@ -1,14 +1,12 @@
-import { ProductId } from '../backend';
-
 const WISHLIST_STORAGE_KEY = 'fitting_point_guest_wishlist';
 const WISHLIST_VERSION = '1.0';
 
 interface StoredWishlist {
   version: string;
-  items: ProductId[];
+  items: string[];
 }
 
-export function getGuestWishlist(): ProductId[] {
+export function getGuestWishlist(): string[] {
   try {
     const stored = localStorage.getItem(WISHLIST_STORAGE_KEY);
     if (!stored) return [];
@@ -26,7 +24,7 @@ export function getGuestWishlist(): ProductId[] {
   }
 }
 
-export function saveGuestWishlist(wishlist: ProductId[]): void {
+export function saveGuestWishlist(wishlist: string[]): void {
   try {
     const toStore: StoredWishlist = {
       version: WISHLIST_VERSION,

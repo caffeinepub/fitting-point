@@ -9,6 +9,7 @@ import { useGuestCart } from '../hooks/useGuestCart';
 import { useGuestWishlist } from '../hooks/useGuestWishlist';
 import { useThemeMode } from '../hooks/useThemeMode';
 import { navigationStructure } from '../utils/storefrontNav';
+import Logo from './Logo';
 import type { CatalogFilter } from '../App';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'checkout' | 'shipping' | 'returns' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings';
@@ -38,8 +39,6 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
       onNavigate('catalog', undefined, filter || {});
     }
   };
-
-  const logoSrc = '/assets/ChatGPT Image Dec 11, 2025, 10_50_00 PM-3.png';
 
   return (
     <header className="sticky top-0 z-50 bg-background/98 backdrop-blur-md supports-[backdrop-filter]:bg-background/95 border-b border-gold/20 shadow-sm">
@@ -116,11 +115,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             onClick={() => onNavigate('home')}
             className="flex items-center justify-center flex-1 lg:flex-none transition-transform hover:scale-105 duration-300"
           >
-            <img
-              src={logoSrc}
-              alt="Fitting Point"
-              className="h-16 w-16 object-contain"
-            />
+            <Logo size="md" />
             <span className="ml-3 font-serif text-xl font-bold text-gold hidden sm:block">Fitting Point</span>
           </button>
 

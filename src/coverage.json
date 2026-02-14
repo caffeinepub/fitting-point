@@ -1,31 +1,58 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T14:29:25.599Z",
+  "generatedAt": "2026-02-14T12:43:35.990Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 0,
+    "total": 4,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix backend admin authentication so that logging in with the configured admin credentials (email: fitting.point.official@gmail.com, password: Farhan@456) successfully grants admin privileges to the current caller and does not incorrectly fail with an invalid-credentials error.",
+        "summary": "Ensure the backend exposes an `isCallerAdmin()` method used by the frontend and that it returns `true` only when the caller has the admin role.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the admin login UI continues to display the message \"Invalid email or password. Please check your credentials and try again.\" only when the backend indicates invalid credentials, and displays a non-credential-related error message for other backend failures.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/utils/adminAuthError.ts",
-          "frontend/src/components/AdminLayout.tsx"
-        ],
+        "summary": "Implement an admin bootstrapping path so that admin login can succeed on a fresh deployment: if there are no admins yet, the first authenticated (non-anonymous) caller who attempts to access admin functionality is granted the admin role.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Fix the admin panel login UI so it works with Internet Identity instead of the current non-functional Admin Key flow: when the viewer is anonymous, show a clear Internet Identity login/sign-up prompt; after login, verify admin status via `isCallerAdmin()` and either enter the admin panel or show an 'insufficient permissions' error state with recovery actions (retry/reset/logout).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/AdminLayout.tsx",
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/AdminLayout.tsx",
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Add a minimal diagnostics surface for admin auth failures: when admin verification fails (backend error or authorization trap), display the parsed error message (English) and provide a copyable error detail section suitable for sharing during support/debugging.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
+          "frontend/src/components/AdminLayout.tsx",
+          "frontend/src/utils/adminAuthError.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
+          "frontend/src/components/AdminLayout.tsx",
+          "frontend/src/utils/adminAuthError.ts"
+        ]
       }
     ]
   },
@@ -34,7 +61,13 @@
     "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
+    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/components/AdminLayout.tsx",
+    "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
+    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/adminAuthError.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

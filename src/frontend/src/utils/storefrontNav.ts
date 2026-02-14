@@ -52,21 +52,21 @@ export const navigationStructure: NavItem[] = [
 
 export const homepageCategoryCards = [
   {
-    title: 'Ihram',
+    title: 'Umrah Essentials',
+    description: 'Complete collection for your Umrah journey',
+    image: '/assets/generated/umrah-essentials-tile.dim_1200x1200.png',
+    filter: { usageCategory: 'umrah' } as CatalogFilter,
+  },
+  {
+    title: 'Hajj Accessories',
+    description: 'Essential accessories for Hajj pilgrims',
+    image: '/assets/generated/hajj-accessories-tile.dim_1200x1200.png',
+    filter: { usageCategory: 'hajj' } as CatalogFilter,
+  },
+  {
+    title: 'Premium Ihram',
     description: 'Premium quality Ihram for your sacred journey',
     image: '/assets/hero1.png',
     filter: { category: 'Ihram' } as CatalogFilter,
-  },
-  {
-    title: 'Belts',
-    description: 'Secure and comfortable Ihram belts',
-    image: '/assets/short belt hero 1.png',
-    filter: { category: 'Belts' } as CatalogFilter,
-  },
-  {
-    title: 'Accessories',
-    description: 'Essential accessories for pilgrims',
-    image: '/assets/generated/handbag-luxury.dim_800x800.jpg',
-    filter: { category: 'Accessories' } as CatalogFilter,
   },
 ];

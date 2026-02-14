@@ -1,5 +1,6 @@
 module {
-  public func run(old : { adminEmail : ?Text; adminPassword : ?Text }) : { adminEmail : ?Text; adminPassword : ?Text } {
-    { old with adminEmail = ?"fitting.point.official@gmail.com"; adminPassword = ?"Farhan@456" };
+  type Actor = {};
+  public func run(old : Actor) : Actor {
+    old;
   };
 };

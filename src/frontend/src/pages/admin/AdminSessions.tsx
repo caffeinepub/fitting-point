@@ -1,8 +1,8 @@
 import { Users, ShoppingCart, Heart, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AdminLayout from '../../components/AdminLayout';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings';
+type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings' | 'shipping' | 'returns';
 
 interface AdminSessionsProps {
   onNavigate: (page: Page) => void;
@@ -10,145 +10,124 @@ interface AdminSessionsProps {
 
 export default function AdminSessions({ onNavigate }: AdminSessionsProps) {
   return (
-    <AdminLayout currentPage="admin-sessions" onNavigate={onNavigate} title="User Sessions & Insights">
-      <div className="space-y-6">
-        <h2 className="font-serif text-3xl text-gold">User Session Insights</h2>
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif text-3xl text-gold mb-2">User Sessions & Insights</h2>
+        <p className="text-muted-foreground">Overview of user activity and session management</p>
+      </div>
 
-        {/* Privacy Notice */}
-        <Card className="border-gold/20 bg-muted/30">
-          <CardHeader>
-            <CardTitle className="font-serif text-2xl text-gold flex items-center gap-2">
-              <Info className="h-6 w-6" />
-              Privacy & Data Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              This section provides insights into user sessions and activity on your e-commerce platform. All data is
-              stored securely on the Internet Computer blockchain and is only accessible to authorized administrators.
-            </p>
-            <div className="p-4 bg-background rounded-lg border border-gold/20">
-              <p className="font-medium text-foreground mb-2">What We Track:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>User cart contents (products, quantities, sizes, colors)</li>
-                <li>User wishlist items (product IDs)</li>
-                <li>User profiles (names for authenticated users)</li>
-                <li>Session activity (authenticated vs. guest users)</li>
-              </ul>
-            </div>
-            <div className="p-4 bg-background rounded-lg border border-gold/20">
-              <p className="font-medium text-foreground mb-2">Privacy Commitment:</p>
-              <ul className="list-disc list-inside space-y-1 text-xs">
-                <li>No personal data is shared with third parties</li>
-                <li>All data is encrypted and stored on-chain</li>
-                <li>Users can clear their data by logging out</li>
-                <li>Guest sessions are stored locally on user devices</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Privacy Notice */}
+      <Alert className="border-gold/20 bg-gold/5">
+        <Info className="h-4 w-4 text-gold" />
+        <AlertDescription className="text-gold">
+          <strong>Privacy First:</strong> This application uses guest sessions stored locally in the browser.
+          No personal data is collected or stored on the server. All cart and wishlist data remains on the user's device.
+        </AlertDescription>
+      </Alert>
 
-        {/* Session Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-gold/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Sessions</CardTitle>
-              <Users className="h-5 w-5 text-gold" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gold">-</div>
-              <p className="text-xs text-muted-foreground mt-1">Real-time tracking coming soon</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-gold/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Carts</CardTitle>
-              <ShoppingCart className="h-5 w-5 text-gold" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gold">-</div>
-              <p className="text-xs text-muted-foreground mt-1">Cart analytics coming soon</p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-gold/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Wishlist Items</CardTitle>
-              <Heart className="h-5 w-5 text-gold" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-gold">-</div>
-              <p className="text-xs text-muted-foreground mt-1">Wishlist analytics coming soon</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Session Management Info */}
+      {/* Session Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-gold/20">
-          <CardHeader>
-            <CardTitle className="font-serif text-2xl text-gold">Session Management</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              User sessions are managed automatically by the Internet Computer's authentication system. Each
-              authenticated user has a unique principal ID that is used to store their cart and wishlist data.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-4 bg-muted/50 rounded-lg border border-gold/20">
-                <p className="font-medium text-foreground mb-2">Authenticated Users:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Persistent cart and wishlist across devices</li>
-                  <li>Secure authentication via Internet Identity</li>
-                  <li>Profile information stored on-chain</li>
-                  <li>Session data persists until logout</li>
-                </ul>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Session Type</p>
+                <p className="text-2xl font-bold text-gold">Guest</p>
               </div>
-              <div className="p-4 bg-muted/50 rounded-lg border border-gold/20">
-                <p className="font-medium text-foreground mb-2">Guest Users:</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Cart and wishlist stored in browser localStorage</li>
-                  <li>Data persists across page reloads</li>
-                  <li>Can merge data after login</li>
-                  <li>No server-side storage for guests</li>
-                </ul>
+              <div className="p-3 rounded-full bg-blue-100">
+                <Users className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Future Features */}
         <Card className="border-gold/20">
-          <CardHeader>
-            <CardTitle className="font-serif text-2xl text-gold">Coming Soon</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3 text-sm text-muted-foreground">
-              <div className="flex items-start gap-3">
-                <div className="h-2 w-2 rounded-full bg-gold mt-2" />
-                <div>
-                  <p className="font-medium text-foreground">Real-time Session Analytics</p>
-                  <p className="text-xs">Track active users, cart abandonment rates, and conversion metrics</p>
-                </div>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Cart Storage</p>
+                <p className="text-2xl font-bold text-gold">Local</p>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="h-2 w-2 rounded-full bg-gold mt-2" />
-                <div>
-                  <p className="font-medium text-foreground">User Behavior Insights</p>
-                  <p className="text-xs">Understand browsing patterns, popular products, and user preferences</p>
-                </div>
+              <div className="p-3 rounded-full bg-green-100">
+                <ShoppingCart className="h-6 w-6 text-green-600" />
               </div>
-              <div className="flex items-start gap-3">
-                <div className="h-2 w-2 rounded-full bg-gold mt-2" />
-                <div>
-                  <p className="font-medium text-foreground">Cart Recovery Tools</p>
-                  <p className="text-xs">Automated reminders and incentives for abandoned carts</p>
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-gold/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Wishlist Storage</p>
+                <p className="text-2xl font-bold text-gold">Local</p>
+              </div>
+              <div className="p-3 rounded-full bg-purple-100">
+                <Heart className="h-6 w-6 text-purple-600" />
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+
+      {/* Session Details */}
+      <Card className="border-gold/20">
+        <CardHeader>
+          <CardTitle className="font-serif text-2xl text-gold">Session Management</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="font-semibold">Guest Sessions</h4>
+            <p className="text-sm text-muted-foreground">
+              All users browse as guests. Shopping cart and wishlist data are stored locally in the browser using localStorage.
+              This ensures privacy and eliminates the need for user accounts.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-semibold">Data Persistence</h4>
+            <p className="text-sm text-muted-foreground">
+              Cart and wishlist data persist across browser sessions until the user clears their browser data or manually
+              clears their cart/wishlist.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h4 className="font-semibold">Privacy & Security</h4>
+            <p className="text-sm text-muted-foreground">
+              No personal information is collected. No tracking cookies are used. All shopping data remains on the user's device.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Technical Details */}
+      <Card className="border-gold/20">
+        <CardHeader>
+          <CardTitle className="font-serif text-2xl text-gold">Technical Implementation</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm">Cart Storage</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Key: fitting_point_guest_cart</li>
+                <li>• Format: JSON with versioning</li>
+                <li>• Capacity: Browser localStorage limit</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-semibold text-sm">Wishlist Storage</h4>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>• Key: fitting_point_guest_wishlist</li>
+                <li>• Format: JSON with versioning</li>
+                <li>• Capacity: Browser localStorage limit</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
