@@ -40,7 +40,6 @@ export default function Footer({ onNavigate }: FooterProps) {
     <footer className="bg-muted/30 border-t border-gold/20 mt-auto">
       <div className="w-full px-4 lg:px-8 xl:px-12 2xl:px-16 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-          {/* Brand */}
           <div className="space-y-4">
             <Logo size="lg" />
             <p className="text-sm text-muted-foreground leading-relaxed font-body">
@@ -48,7 +47,6 @@ export default function Footer({ onNavigate }: FooterProps) {
             </p>
           </div>
 
-          {/* Quick Links */}
           <div>
             <h3 className="font-serif text-lg text-gold mb-4">Quick Links</h3>
             <ul className="space-y-2">
@@ -56,7 +54,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 <li key={link.page}>
                   <button
                     onClick={() => onNavigate(link.page)}
-                    className="text-sm text-muted-foreground hover:text-gold transition-colors duration-300"
+                    className="text-sm text-muted-foreground hover:text-gold transition-all duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.label}
                   </button>
@@ -65,7 +63,6 @@ export default function Footer({ onNavigate }: FooterProps) {
             </ul>
           </div>
 
-          {/* Customer Service */}
           <div>
             <h3 className="font-serif text-lg text-gold mb-4">Customer Service</h3>
             <ul className="space-y-2">
@@ -73,7 +70,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                 <li key={link.page}>
                   <button
                     onClick={() => onNavigate(link.page)}
-                    className="text-sm text-muted-foreground hover:text-gold transition-colors duration-300"
+                    className="text-sm text-muted-foreground hover:text-gold transition-all duration-300 hover:translate-x-1 inline-block"
                   >
                     {link.label}
                   </button>
@@ -82,7 +79,6 @@ export default function Footer({ onNavigate }: FooterProps) {
             </ul>
           </div>
 
-          {/* Connect */}
           <div>
             <h3 className="font-serif text-lg text-gold mb-4">Connect With Us</h3>
             <div className="flex space-x-4">
@@ -94,7 +90,7 @@ export default function Footer({ onNavigate }: FooterProps) {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-gold transition-all duration-300 hover:scale-110"
+                    className="text-muted-foreground hover:text-gold transition-all duration-300 hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 rounded"
                     aria-label={social.label}
                   >
                     <Icon className="h-5 w-5" />
@@ -117,7 +113,7 @@ export default function Footer({ onNavigate }: FooterProps) {
               href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${appIdentifier}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gold hover:underline"
+              className="text-gold hover:underline transition-all duration-300"
             >
               caffeine.ai
             </a>

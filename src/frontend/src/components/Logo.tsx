@@ -1,7 +1,4 @@
-/**
- * Shared Logo component that renders the Fitting Point logo as a circle
- * Used consistently across Header, Footer, and other locations
- */
+import { useGetLogo } from '../hooks/useQueries';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -15,12 +12,16 @@ const sizeClasses = {
 };
 
 export default function Logo({ size = 'md', className = '' }: LogoProps) {
-  const logoSrc = '/assets/ChatGPT Image Dec 11, 2025, 10_50_00 PM-3.png';
+  const { data: logo } = useGetLogo();
+  
+  // Use backend-managed logo if available, otherwise fallback to static asset
+  const logoSrc = logo?.image.getDirectURL() || '/assets/ChatGPT Image Dec 11, 2025, 10_50_00 PM-3.png';
+  const altText = logo?.altText || 'Fitting Point';
 
   return (
     <img
       src={logoSrc}
-      alt="Fitting Point"
+      alt={altText}
       className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
     />
   );

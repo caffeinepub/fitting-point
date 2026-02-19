@@ -37,7 +37,7 @@ export default function OffersSection({ onNavigate }: OffersSectionProps) {
           {offers.map((offer, index) => (
             <Card
               key={index}
-              className="group overflow-hidden border-gold/10 hover:border-gold/40 transition-all duration-500 hover:shadow-premium-lg hover:-translate-y-1"
+              className="group overflow-hidden border-gold/10 hover:border-gold/40 transition-all duration-500 hover:shadow-premium-lg hover:-translate-y-2"
             >
               <div className="relative aspect-[21/9] overflow-hidden">
                 <img
@@ -47,14 +47,14 @@ export default function OffersSection({ onNavigate }: OffersSectionProps) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity duration-500 group-hover:from-black/85" />
                 <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-                  <h3 className="font-heading text-2xl md:text-3xl font-bold mb-2 transition-transform duration-500 group-hover:translate-x-1">
+                  <h3 className="font-heading text-2xl md:text-3xl font-bold mb-2 transition-transform duration-500 group-hover:translate-x-2">
                     {offer.title}
                   </h3>
                   <p className="font-body text-base md:text-lg opacity-90 mb-4">
                     {offer.subtitle}
                   </p>
                   <Button
-                    className="bg-gold hover:bg-gold-dark text-white transition-all duration-300 hover:shadow-gold-soft hover:scale-105"
+                    className="bg-gold hover:bg-gold-dark text-white transition-all duration-300 hover:shadow-gold-soft hover:scale-105 focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
                     onClick={() => onNavigate('catalog', undefined, offer.filter)}
                   >
                     {offer.ctaText}

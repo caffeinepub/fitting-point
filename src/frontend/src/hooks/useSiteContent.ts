@@ -22,13 +22,23 @@ export function useUpdateSiteContent() {
   const { requireAdmin } = useAdminGuard();
 
   return useMutation({
-    mutationFn: async ({ heroText, contactDetails, darkModeEnabled }: { heroText: string; contactDetails: string; darkModeEnabled: boolean }) => {
+    mutationFn: async ({ 
+      heroText, 
+      contactDetails, 
+      darkModeEnabled, 
+      companyName 
+    }: { 
+      heroText: string; 
+      contactDetails: string; 
+      darkModeEnabled: boolean; 
+      companyName: string;
+    }) => {
       if (!actor) throw new Error('Actor not available');
       
       // Verify backend admin status before proceeding
-      await requireAdmin();
+      requireAdmin('update site content');
       
-      return actor.updateSiteContent(heroText, contactDetails, darkModeEnabled);
+      return actor.updateSiteContent(heroText, contactDetails, darkModeEnabled, companyName);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['siteContent'] });
@@ -49,13 +59,14 @@ export function useToggleDarkMode() {
       const currentContent = await actor.getSiteContent();
       
       // Verify backend admin status before proceeding
-      await requireAdmin();
+      requireAdmin('toggle dark mode');
       
       // Update with new dark mode setting
       return actor.updateSiteContent(
         currentContent.heroText,
         currentContent.contactDetails,
-        enabled
+        enabled,
+        currentContent.companyName
       );
     },
     onSuccess: () => {

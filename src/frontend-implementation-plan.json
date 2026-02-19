@@ -1,56 +1,135 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix admin panel auth UI to use Internet Identity and add admin auth diagnostics",
+  "title": "Improve image upload and ordering system",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Replace the broken Admin Key admin gate with an Internet Identity login prompt and post-login admin verification that routes admins to the dashboard and non-admins to a recovery/error state.",
+      "id": "REQ-1",
+      "summary": "Implement drag and drop file upload functionality for images throughout the admin panel",
       "acceptanceCriteria": [
-        "If the user is not logged in (anonymous), the admin page shows a 'Log in with Internet Identity' call-to-action (English text) and does not misleadingly require an Admin Key.",
-        "After successful Internet Identity login, the app re-checks `isCallerAdmin()` and navigates into the admin dashboard when the caller is an admin.",
-        "If the logged-in user is not an admin, the UI shows an English error message indicating they do not have admin permissions and provides at least one recovery action (e.g., logout/switch account, retry verification, reset admin session)."
+        "Image upload zones accept dragged files and display visual feedback during drag-over",
+        "Dropped files are validated and uploaded automatically",
+        "Existing click-to-upload functionality remains available"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/AdminLayout.tsx",
+          "path": "frontend/src/components/MediaSlotUploader.tsx",
           "operation": "modify",
-          "description": "Update the admin gate flow to: (1) detect anonymous viewers via `useInternetIdentity()` and render an Internet Identity login/sign-up prompt with a 'Log in with Internet Identity' CTA; (2) after login, re-check admin status using `useIsCallerAdmin()` and navigate to the admin dashboard when admin; (3) if authenticated but not admin, show an 'insufficient permissions' state with recovery actions (logout/switch account using `clear()`, retry verification via refetch, and reset admin session). Remove all Admin Key UI copy/inputs/icons so the page is not misleading. Verify the component's usage instructions before implementing."
+          "description": "Add drag-and-drop event handlers (onDragEnter, onDragOver, onDragLeave, onDrop) to the existing upload zone. Show visual feedback (border highlight or overlay) during dragOver state. Validate dropped files for image types and size constraints. Preserve existing click-to-upload behavior. Use the blob-storage component's ExternalBlob.fromBytes() to handle uploads with progress tracking via withUploadProgress()."
         },
         {
-          "path": "frontend/src/hooks/useAdminSession.ts",
+          "path": "frontend/src/pages/admin/AdminProducts.tsx",
           "operation": "modify",
-          "description": "Refactor admin session helper to align with Internet Identity: remove the Admin Key parameter from `login`, keep it as a lightweight 'verify admin and persist session' helper (calling `actor.isCallerAdmin()`), and ensure `logout`/`resetSession` remain available for the recovery actions used by the admin gate UI. Verify the component's usage instructions before implementing."
+          "description": "Update product image upload sections to support drag-and-drop by integrating the enhanced MediaSlotUploader component. Ensure multiple image slots can independently accept dragged files. Verify the blob-storage component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/admin/AdminLookbook.tsx",
           "operation": "modify",
-          "description": "Adjust `useIsCallerAdmin()` behavior to better support the new gate UI: avoid running admin verification when the viewer is anonymous (so the admin page can consistently show the Internet Identity login prompt first) and keep errors surfaced for the authenticated verification step. Verify the component's usage instructions before implementing."
+          "description": "Update lookbook image upload interface to support drag-and-drop using the enhanced MediaSlotUploader component. Maintain existing progress tracking and error handling. Verify the blob-storage component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
+          "operation": "modify",
+          "description": "Update banner image upload sections to support drag-and-drop by integrating the enhanced MediaSlotUploader component. Ensure drag-and-drop works for both new banner creation and editing existing banners. Verify the blob-storage component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminSiteSettings.tsx",
+          "operation": "modify",
+          "description": "Update logo upload interface to support drag-and-drop by integrating the enhanced MediaSlotUploader component. Maintain existing logo preview and link configuration. Verify the blob-storage component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add drag-to-reorder functionality for images in admin interfaces",
+      "acceptanceCriteria": [
+        "Images can be reordered by dragging them to new positions",
+        "Visual feedback shows the target drop position during drag",
+        "Reordering persists to the backend when completed"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/DraggableImageList.tsx",
+          "operation": "create",
+          "description": "Create a reusable draggable image list component using native HTML5 drag-and-drop APIs. Implement dragStart, dragOver, dragEnter, dragLeave, and drop handlers. Show visual feedback (drop zone indicators, ghost image styling) during drag operations. Accept an array of image items with ExternalBlob references and an onChange callback to report reordered arrays. Support both product images and banner images through generic typing."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminProducts.tsx",
+          "operation": "modify",
+          "description": "Replace the static product image display with the DraggableImageList component. Wire the onChange callback to update the product's images array in the form state. Ensure reordered images are saved when the product is updated via adminUpdateProduct mutation."
+        },
+        {
+          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
+          "operation": "modify",
+          "description": "Add a drag-to-reorder interface for homepage banners using the DraggableImageList component. Wire the onChange callback to trigger the updateBannerOrder mutation with the new banner order array. Show visual feedback during drag operations and display success/error messages after reordering."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Implement a numbered order system as an alternative to drag-to-reorder for precise image ordering control",
+      "acceptanceCriteria": [
+        "Each image displays its current position number",
+        "Administrators can edit position numbers directly",
+        "Images automatically reorder when position numbers are changed"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/NumberedImageOrderControls.tsx",
+          "operation": "create",
+          "description": "Create a component that displays numbered order inputs for each image in a list. Show the current position number as an editable input field next to each image thumbnail. Implement onChange handlers that validate numeric input (positive integers only) and trigger reordering logic. Accept an array of images with order metadata and an onChange callback to report the reordered array. Support both product images and banner images through generic typing."
+        },
+        {
+          "path": "frontend/src/components/admin/DraggableImageList.tsx",
+          "operation": "modify",
+          "description": "Add an optional showNumberedControls prop to display position number inputs alongside each image. When a number is changed, automatically reorder the array and call the onChange callback. Ensure numbered controls work independently from drag-and-drop reordering."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminProducts.tsx",
+          "operation": "modify",
+          "description": "Enable the numbered order controls in the DraggableImageList component for product images. Allow administrators to toggle between drag-to-reorder and numbered input modes via a UI control. Ensure both methods trigger the same product update flow."
+        },
+        {
+          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
+          "operation": "modify",
+          "description": "Enable the numbered order controls in the banner ordering interface. Allow administrators to edit banner order numbers directly. Trigger the updateBannerOrder mutation when position numbers are changed. Display validation feedback for invalid or duplicate position numbers."
         }
       ]
     },
     {
       "id": "REQ-4",
-      "summary": "Add a minimal diagnostics surface on the admin gate for admin verification failures, including parsed messaging and copyable technical error details.",
+      "summary": "Enable re-upload and replacement functionality for all existing images and placeholders across the site",
       "acceptanceCriteria": [
-        "When `useIsCallerAdmin()` errors, the admin gate screen shows an English summary plus a collapsible/copyable technical detail (e.g., the raw error message) without crashing the app.",
-        "The existing `parseAdminAuthError` classification is used to drive user-facing messaging."
+        "Every image slot in the admin panel shows a replace/re-upload option",
+        "Replacing an image updates the display immediately without requiring page refresh",
+        "Placeholder images can be replaced with actual images using the same interface",
+        "The replacement action preserves all associated metadata (alt text, links, etc.)"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
-          "operation": "create",
-          "description": "Create a small reusable diagnostics UI used by the admin gate to render: (1) an English summary driven by `parseAdminAuthError`, (2) a collapsible technical details section showing the raw error message/string, and (3) a 'Copy details' action that copies the technical detail text to the clipboard. Use existing shadcn/ui building blocks via composition (do not edit `frontend/src/components/ui`). Verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/MediaSlotUploader.tsx",
+          "operation": "modify",
+          "description": "Ensure the component clearly displays a 'Replace' or 'Re-upload' button for existing images (not just a remove option). Update the UI to show the current image with clear affordances for replacement. When a new file is selected or dropped, immediately show the new preview and upload it using ExternalBlob.fromBytes() with progress tracking. Preserve all existing metadata (alt text, links) in the parent component's state during replacement."
         },
         {
-          "path": "frontend/src/components/AdminLayout.tsx",
+          "path": "frontend/src/pages/admin/AdminProducts.tsx",
           "operation": "modify",
-          "description": "Integrate the new `AdminAuthDiagnostics` component into the admin gate error states (admin verification errors and other admin-auth-related failures) so the UI shows parsed English messaging plus collapsible/copyable technical detail without crashing; continue using `parseAdminAuthError` for classification. Verify the component's usage instructions before implementing."
+          "description": "Ensure all product image slots support replacement via the enhanced MediaSlotUploader component. When an image is replaced, update the product's images array in the form state immediately. Preserve product metadata (name, description, etc.) when images are replaced. Display success feedback after replacement is complete."
         },
         {
-          "path": "frontend/src/utils/adminAuthError.ts",
+          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
           "operation": "modify",
-          "description": "Ensure `parseAdminAuthError` continues to provide stable, English, user-facing messages for Internet Identity and authorization scenarios (including anonymous access, authorization traps, and actor/initialization issues) suitable for driving the admin gate diagnostics surface. Verify the component's usage instructions before implementing."
+          "description": "Ensure banner image slots support replacement via the enhanced MediaSlotUploader component. When a banner image is replaced, preserve the banner's title, description, link, and order metadata. Update the display immediately after replacement. Trigger the appropriate backend mutation to persist the change."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminLookbook.tsx",
+          "operation": "modify",
+          "description": "Ensure lookbook image slots support replacement via the enhanced MediaSlotUploader component. When an image is replaced, preserve the lookbook item's description and tagged products. Update the display immediately and persist the change to the backend."
+        },
+        {
+          "path": "frontend/src/pages/admin/AdminSiteSettings.tsx",
+          "operation": "modify",
+          "description": "Ensure the logo upload interface supports replacement via the enhanced MediaSlotUploader component. When the logo is replaced, preserve the altText and link metadata. Update the display immediately and persist the change via the updateLogo mutation. Show success feedback after replacement."
         }
       ]
     }

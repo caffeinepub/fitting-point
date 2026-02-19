@@ -1,88 +1,90 @@
 {
   "kind": "build_request",
-  "title": "Fix broken admin login/sign-up (Internet Identity + admin role bootstrapping)",
-  "priority": "high",
+  "title": "Improve image upload and ordering system",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Ensure the backend exposes an `isCallerAdmin()` method used by the frontend and that it returns `true` only when the caller has the admin role.",
-      "target": "backend",
+      "text": "Implement drag and drop file upload functionality for images throughout the admin panel, allowing administrators to drag image files directly into upload zones instead of using file picker dialogs.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-last"
         ],
         "quotes": [
-          "admin login or sign up is not working"
+          "Allow drag and drop upload."
         ]
       },
       "acceptanceCriteria": [
-        "Calling `actor.isCallerAdmin()` from the frontend succeeds (no missing method / no candid mismatch).",
-        "`isCallerAdmin()` returns `false` for non-admin principals and `true` for admin principals."
+        "Image upload zones accept dragged files and display visual feedback during drag-over",
+        "Dropped files are validated and uploaded automatically",
+        "Existing click-to-upload functionality remains available"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Implement an admin bootstrapping path so that admin login can succeed on a fresh deployment: if there are no admins yet, the first authenticated (non-anonymous) caller who attempts to access admin functionality is granted the admin role.",
-      "target": "backend",
+      "text": "Add drag-to-reorder functionality for images, allowing administrators to reorder images by dragging them to new positions within the image list or gallery.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-last"
         ],
         "quotes": [
-          "admin login or sign up is not working"
+          "Allow drag to reorder OR numbered order system."
         ]
       },
       "acceptanceCriteria": [
-        "On a fresh canister with no admins configured, the first non-anonymous principal to trigger the bootstrap flow becomes admin and `isCallerAdmin()` returns `true` for that principal afterward.",
-        "Anonymous principals are never granted admin during bootstrapping.",
-        "After at least one admin exists, no additional principals are automatically promoted to admin."
+        "Images can be reordered by dragging them to new positions",
+        "Visual feedback shows the target drop position during drag",
+        "Reordering persists to the backend when completed"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Fix the admin panel login UI so it works with Internet Identity instead of the current non-functional Admin Key flow: when the viewer is anonymous, show a clear Internet Identity login/sign-up prompt; after login, verify admin status via `isCallerAdmin()` and either enter the admin panel or show an 'insufficient permissions' error state with recovery actions (retry/reset/logout).",
+      "text": "Implement a numbered order system as an alternative to drag-to-reorder, allowing administrators to assign explicit numeric positions to images for precise ordering control.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-last"
         ],
         "quotes": [
-          "admin login or sign up is not working"
+          "Allow drag to reorder OR numbered order system."
         ]
       },
       "acceptanceCriteria": [
-        "If the user is not logged in (anonymous), the admin page shows a 'Log in with Internet Identity' call-to-action (English text) and does not misleadingly require an Admin Key.",
-        "After successful Internet Identity login, the app re-checks `isCallerAdmin()` and navigates into the admin dashboard when the caller is an admin.",
-        "If the logged-in user is not an admin, the UI shows an English error message indicating they do not have admin permissions and provides at least one recovery action (e.g., logout/switch account, retry verification, reset admin session)."
+        "Each image displays its current position number",
+        "Administrators can edit position numbers directly",
+        "Images automatically reorder when position numbers are changed"
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Add a minimal diagnostics surface for admin auth failures: when admin verification fails (backend error or authorization trap), display the parsed error message (English) and provide a copyable error detail section suitable for sharing during support/debugging.",
+      "text": "Enable re-upload and replacement functionality for all existing images and placeholders across the site, including offer images, product category banners, homepage banners, lookbook images, product images, and the site logo.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-last"
         ],
         "quotes": [
-          "admin login or sign up is not working"
+          "Allow me to re-upload or replace all current images or placeholders already on the site, including offer images and product category banners."
         ]
       },
       "acceptanceCriteria": [
-        "When `useIsCallerAdmin()` errors, the admin gate screen shows an English summary plus a collapsible/copyable technical detail (e.g., the raw error message) without crashing the app.",
-        "The existing `parseAdminAuthError` classification is used to drive user-facing messaging."
+        "Every image slot in the admin panel shows a replace/re-upload option",
+        "Replacing an image updates the display immediately without requiring page refresh",
+        "Placeholder images can be replaced with actual images using the same interface",
+        "The replacement action preserves all associated metadata (alt text, links, etc.)"
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor (all logic in backend/main.mo); add backend/migration.mo only if state schema changes require it.",
-    "Do not edit files under frontend immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui (compose them instead).",
-    "Use English for any user-facing text."
+    "Maintain single-actor backend architecture with all logic in backend/main.mo",
+    "Do not modify immutable frontend paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui"
   ],
   "nonGoals": [
-    "Adding external databases (e.g., Supabase) or any off-chain storage.",
-    "Implementing third-party authentication providers beyond Internet Identity.",
-    "Building real-time admin presence or multi-admin invitation workflows."
+    "Implementing third-party drag-and-drop libraries beyond what's necessary",
+    "Adding bulk image operations or batch processing",
+    "Creating new image types or categories beyond what currently exists"
   ],
   "imageRequirements": {
     "required": [],

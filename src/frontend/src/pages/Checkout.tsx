@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { useGuestCart } from '../hooks/useGuestCart';
 import { useGetAllProducts } from '../hooks/useQueries';
 import { buildWhatsAppCheckoutURL } from '../utils/whatsapp';
+import { calculateCartSummary } from '../utils/cartSummary';
 import { formatINR } from '../utils/currency';
 
 type Page = 'home' | 'catalog' | 'cart';
@@ -32,13 +33,10 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
     };
   });
 
-  const subtotal = cartWithDetails.reduce((sum, item) => {
-    if (!item.product) return sum;
-    return sum + Number(item.product.price) * Number(item.quantity);
-  }, 0);
+  const summary = calculateCartSummary(cartWithDetails);
 
   const handleWhatsAppCheckout = () => {
-    const whatsappURL = buildWhatsAppCheckoutURL(cartWithDetails, subtotal);
+    const whatsappURL = buildWhatsAppCheckoutURL(cartWithDetails);
     window.open(whatsappURL, '_blank');
   };
 
@@ -62,31 +60,28 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {cartWithDetails.map((item, index) => {
-              const lineTotal = item.product ? Number(item.product.price) * Number(item.quantity) : 0;
-              return (
-                <div key={index}>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="font-serif text-lg">{item.product?.name || 'Unknown Product'}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Size: {item.size} • Color: {item.color} • Qty: {Number(item.quantity)}
-                      </p>
-                    </div>
-                    <p className="font-serif text-gold">
-                      {formatINR(lineTotal)}
+            {summary.items.map((item, index) => (
+              <div key={index}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-serif text-lg">{item.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Size: {item.size} • Color: {item.color} • Qty: {item.quantity}
                     </p>
                   </div>
-                  {index < cartWithDetails.length - 1 && <Separator className="mt-4 bg-gold/20" />}
+                  <p className="font-serif text-gold">
+                    {formatINR(item.lineTotal)}
+                  </p>
                 </div>
-              );
-            })}
+                {index < summary.items.length - 1 && <Separator className="mt-4 bg-gold/20" />}
+              </div>
+            ))}
 
             <Separator className="bg-gold/20" />
 
             <div className="flex justify-between items-center text-lg font-serif">
               <span>Total</span>
-              <span className="text-gold text-2xl">{formatINR(subtotal)}</span>
+              <span className="text-gold text-2xl">{formatINR(summary.subtotal)}</span>
             </div>
           </CardContent>
         </Card>
@@ -103,7 +98,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
               <Button
                 size="lg"
                 onClick={handleWhatsAppCheckout}
-                className="bg-gold hover:bg-gold/90 text-white font-serif text-lg px-8"
+                className="bg-gold hover:bg-gold/90 text-white font-serif text-lg px-8 transition-all duration-300 hover:shadow-gold-soft hover:scale-105"
               >
                 <MessageCircle className="h-5 w-5 mr-2" />
                 Open WhatsApp
@@ -119,7 +114,7 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
           <Button
             variant="ghost"
             onClick={() => onNavigate('cart')}
-            className="text-gold hover:text-gold/80"
+            className="text-gold hover:text-gold/80 transition-colors duration-300"
           >
             ← Back to Cart
           </Button>

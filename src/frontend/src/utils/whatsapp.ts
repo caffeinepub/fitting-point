@@ -1,4 +1,5 @@
 import { formatINR } from './currency';
+import { calculateCartSummary } from './cartSummary';
 
 interface CartItemWithProduct {
   productId: string;
@@ -13,11 +14,8 @@ interface CartItemWithProduct {
 }
 
 function normalizePhoneNumber(phone: string): string {
-  // Remove all non-digit characters
   const digits = phone.replace(/\D/g, '');
   
-  // If it starts with 91 (India country code), use as-is
-  // Otherwise, prepend 91
   if (digits.startsWith('91')) {
     return digits;
   }
@@ -25,38 +23,31 @@ function normalizePhoneNumber(phone: string): string {
 }
 
 export function buildWhatsAppCheckoutURL(
-  cartItems: CartItemWithProduct[],
-  total: number
+  cartItems: CartItemWithProduct[]
 ): string {
   const phoneNumber = normalizePhoneNumber(
     import.meta.env.VITE_WHATSAPP_NUMBER || '919826022251'
   );
 
-  // Build order message
+  const summary = calculateCartSummary(cartItems);
+
   let message = '🛍️ *New Order from Fitting Point*\n\n';
   message += '*Order Details:*\n';
   message += '━━━━━━━━━━━━━━━━\n\n';
 
-  cartItems.forEach((item, index) => {
-    const productName = item.product?.name || 'Unknown Product';
-    const price = item.product ? Number(item.product.price) : 0;
-    const quantity = Number(item.quantity);
-    const lineTotal = price * quantity;
-
-    message += `${index + 1}. *${productName}*\n`;
+  summary.items.forEach((item, index) => {
+    message += `${index + 1}. *${item.name}*\n`;
     message += `   Size: ${item.size}\n`;
     message += `   Color: ${item.color}\n`;
-    message += `   Quantity: ${quantity}\n`;
-    message += `   Price: ${formatINR(lineTotal)}\n\n`;
+    message += `   Quantity: ${item.quantity}\n`;
+    message += `   Price: ${formatINR(item.lineTotal)}\n\n`;
   });
 
   message += '━━━━━━━━━━━━━━━━\n';
-  message += `*Total Amount: ${formatINR(total)}*\n\n`;
+  message += `*Total Amount: ${formatINR(summary.subtotal)}*\n\n`;
   message += 'Please confirm this order and let me know the delivery details.';
 
-  // Encode message for URL
   const encodedMessage = encodeURIComponent(message);
 
-  // Build WhatsApp URL
   return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 }

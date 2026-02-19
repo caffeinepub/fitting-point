@@ -1,29 +1,30 @@
-import { useCallback } from 'react';
-import { useActor } from './useActor';
+import { useIsCallerAdmin } from './useQueries';
 
 /**
- * Admin guard hook for protecting mutations.
- * Verifies backend admin status before allowing operations.
+ * Admin guard hook that verifies backend admin status before mutations.
+ * Relies solely on backend isCallerAdmin() for authorization.
  */
 export function useAdminGuard() {
-  const { actor } = useActor();
+  const { data: isAdmin = false, isLoading, error } = useIsCallerAdmin();
 
-  const requireAdmin = useCallback(async () => {
-    if (!actor) {
-      throw new Error('Backend actor is not available');
+  const requireAdmin = (action: string = 'perform this action') => {
+    if (isLoading) {
+      throw new Error('Admin verification in progress. Please wait.');
     }
 
-    try {
-      const isAdmin = await actor.isCallerAdmin();
-      if (!isAdmin) {
-        throw new Error('Admin privileges required. Please log in as an administrator.');
-      }
-      return true;
-    } catch (error: any) {
-      console.error('Admin verification failed:', error);
-      throw new Error(`Admin verification failed: ${error.message || 'Unknown error'}`);
+    if (error) {
+      throw new Error(`Admin verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }, [actor]);
 
-  return { requireAdmin };
+    if (!isAdmin) {
+      throw new Error(`Unauthorized: You must be an admin to ${action}`);
+    }
+  };
+
+  return {
+    isAdmin,
+    isLoading,
+    error,
+    requireAdmin,
+  };
 }

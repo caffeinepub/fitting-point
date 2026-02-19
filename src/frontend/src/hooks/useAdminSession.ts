@@ -27,7 +27,8 @@ export function useAdminSession() {
     setLoginError(null);
 
     try {
-      // Verify the current user is an admin
+      // Verify the current user is an admin via backend isCallerAdmin()
+      // This call handles bootstrapping automatically on the backend
       const isAdmin = await actor.isCallerAdmin();
       
       if (!isAdmin) {

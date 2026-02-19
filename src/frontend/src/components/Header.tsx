@@ -49,7 +49,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-gold hover:text-gold/80"
+                className="lg:hidden text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300"
               >
                 <Menu className="h-6 w-6" />
               </Button>
@@ -129,18 +129,21 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               >
                 <button
                   onClick={() => handleNavClick(item.label, item.filter)}
-                  className={`px-4 py-2 text-sm font-serif transition-all duration-300 flex items-center gap-1 ${
+                  className={`px-4 py-2 text-sm font-serif transition-all duration-300 flex items-center gap-1 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 rounded-md ${
                     currentPage === 'catalog' || currentPage === 'home'
                       ? 'text-gold font-semibold'
-                      : 'text-foreground hover:text-gold'
+                      : 'text-foreground'
                   }`}
                 >
                   {item.label}
-                  {item.subcategories && <ChevronDown className="h-3 w-3" />}
+                  {item.subcategories && <ChevronDown className="h-3 w-3 transition-transform duration-300" />}
                 </button>
 
                 {item.subcategories && hoveredNav === item.label && (
-                  <div className="absolute top-full left-0 mt-2 bg-background border border-gold/20 rounded-lg shadow-gold-soft min-w-[200px] py-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="absolute top-full left-0 mt-2 bg-background border border-gold/30 rounded-xl shadow-premium-lg min-w-[280px] py-3 animate-in fade-in slide-in-from-top-2 duration-300 overflow-hidden">
+                    <div className="px-4 py-2 border-b border-gold/20 mb-2">
+                      <p className="font-heading text-sm font-bold text-gold">{item.label}</p>
+                    </div>
                     {item.subcategories.map((sub) => (
                       <button
                         key={sub.label}
@@ -148,7 +151,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
                           handleNavClick(item.label, sub.filter);
                           setHoveredNav(null);
                         }}
-                        className="block w-full text-left px-4 py-2 text-sm text-muted-foreground hover:text-gold hover:bg-gold/5 transition-colors duration-300"
+                        className="block w-full text-left px-4 py-3 text-sm text-foreground hover:bg-gold/10 hover:text-gold transition-all duration-300 hover:translate-x-1 focus-visible:outline-none focus-visible:bg-gold/10 focus-visible:text-gold"
                       >
                         {sub.label}
                       </button>
@@ -160,7 +163,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             {isAdmin && (
               <button
                 onClick={() => onNavigate('admin')}
-                className="px-4 py-2 text-sm font-serif transition-all duration-300 flex items-center gap-2 text-foreground hover:text-gold"
+                className="px-4 py-2 text-sm font-serif text-foreground hover:text-gold transition-all duration-300 flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2 rounded-md"
               >
                 <Shield className="h-4 w-4" />
                 Admin
@@ -173,7 +176,7 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="text-gold hover:text-gold/80"
+              className="text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300 hover:scale-110 focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
@@ -181,21 +184,12 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="text-gold hover:text-gold/80 hidden md:flex"
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
               onClick={() => onNavigate('wishlist')}
-              className="relative text-gold hover:text-gold/80"
+              className="relative text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300 hover:scale-110 focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             >
               <Heart className="h-5 w-5" />
               {wishlistCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-md">
                   {wishlistCount}
                 </span>
               )}
@@ -205,28 +199,17 @@ export default function Header({ currentPage, onNavigate }: HeaderProps) {
               variant="ghost"
               size="icon"
               onClick={() => onNavigate('cart')}
-              className="relative text-gold hover:text-gold/80"
+              className="relative text-gold hover:text-gold/80 hover:bg-gold/10 transition-all duration-300 hover:scale-110 focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
             >
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                <span className="absolute -top-1 -right-1 bg-gold text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold shadow-md">
                   {cartCount}
                 </span>
               )}
             </Button>
           </div>
         </div>
-
-        {searchOpen && (
-          <div className="pb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-            <Input
-              type="search"
-              placeholder="Search products..."
-              className="w-full border-gold/30 focus:border-gold"
-              autoFocus
-            />
-          </div>
-        )}
       </div>
     </header>
   );

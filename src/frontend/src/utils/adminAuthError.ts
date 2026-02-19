@@ -1,7 +1,7 @@
 export interface ParsedAdminAuthError {
   message: string;
   nextSteps?: string;
-  type: 'anonymous_access' | 'authorization_trap' | 'actor_unavailable' | 'network_error' | 'unknown';
+  type: 'anonymous_access' | 'authorization_trap' | 'signup_closed' | 'already_admin' | 'actor_unavailable' | 'network_error' | 'validation_error' | 'category_in_use' | 'unknown';
 }
 
 export function parseAdminAuthError(error: unknown): ParsedAdminAuthError {
@@ -25,16 +25,74 @@ export function parseAdminAuthError(error: unknown): ParsedAdminAuthError {
     };
   }
 
-  // Authorization/permission errors
+  // Admin signup window closed
+  if (
+    lowerMessage.includes('registration window is closed') ||
+    lowerMessage.includes('signup window') ||
+    lowerMessage.includes('admin registration is closed')
+  ) {
+    return {
+      message: 'Admin registration is closed',
+      nextSteps: 'The admin signup window has been closed. Please log in with an existing admin account or contact the site administrator.',
+      type: 'signup_closed',
+    };
+  }
+
+  // Already registered as admin
+  if (
+    lowerMessage.includes('already registered as an admin') ||
+    lowerMessage.includes('already an admin') ||
+    lowerMessage.includes('you are already')
+  ) {
+    return {
+      message: 'You are already registered as an admin',
+      nextSteps: 'Your Internet Identity is already an administrator. Please refresh the page or retry verification to continue to the dashboard.',
+      type: 'already_admin',
+    };
+  }
+
+  // Category already exists
+  if (lowerMessage.includes('category with that name already exists')) {
+    return {
+      message: 'Category name already exists',
+      nextSteps: 'Please choose a different name for this category.',
+      type: 'validation_error',
+    };
+  }
+
+  // Category in use (has products)
+  if (lowerMessage.includes('category has') && lowerMessage.includes('product')) {
+    return {
+      message: 'Cannot delete category with products',
+      nextSteps: 'Please reassign or remove all products from this category before deleting it.',
+      type: 'category_in_use',
+    };
+  }
+
+  // Missing required fields
+  if (
+    lowerMessage.includes('required') ||
+    lowerMessage.includes('missing') ||
+    lowerMessage.includes('cannot be empty')
+  ) {
+    return {
+      message: 'Missing required information',
+      nextSteps: 'Please fill in all required fields and try again.',
+      type: 'validation_error',
+    };
+  }
+
+  // Authorization/permission errors (not admin)
   if (
     lowerMessage.includes('unauthorized') ||
     lowerMessage.includes('access denied') ||
     lowerMessage.includes('admin privileges') ||
-    lowerMessage.includes('permission')
+    lowerMessage.includes('permission') ||
+    lowerMessage.includes('not authorized')
   ) {
     return {
-      message: 'You do not have admin permissions',
-      nextSteps: 'Please contact the site administrator or log in with an admin account.',
+      message: 'Your Internet Identity is not authorized',
+      nextSteps: 'Please log out and switch to an admin account, or contact the site administrator for access.',
       type: 'authorization_trap',
     };
   }
@@ -68,8 +126,8 @@ export function parseAdminAuthError(error: unknown): ParsedAdminAuthError {
 
   // Generic fallback
   return {
-    message: 'Admin verification failed',
-    nextSteps: 'Please try logging out and logging in again. If the issue persists, contact support.',
+    message: errorMessage || 'An error occurred',
+    nextSteps: 'Please try again. If the issue persists, contact support.',
     type: 'unknown',
   };
 }

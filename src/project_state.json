@@ -1,24 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
+  "summary": "E-commerce admin panel with product and media management features",
   "architectural_notes": [],
   "known_issues": [
-    "Admin login/sign-up flow is not working (authentication issue in admin panel)."
+    "Price display formatting issue in admin panel: ₹299 shows as ₹2.99"
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-fix-the-admin-panel-login-ui-so-it-works-with-internet-identity-instead-of-the-current-non-functional-admin-key-flow-when-the-viewer-is-anonymous-show-a-clear-internet-identity-login-sign-up-prompt-after-login-verify-admin-status-via-iscalleradmin-and-either-enter-the-admin-panel-or-show-an-insufficient-permissions-error-state-with-recovery-actions-retry-reset-logout",
-      "title": "Fix the admin panel login UI so it works with Internet Identity instead of the current non-functional Admin Key flow: when the viewer is anonymous, show a clear Internet Identity login/sign-up prompt; after login, verify admin status via `isCallerAdmin()` and either enter the admin panel or show an 'insufficient permissions' error state with recovery actions (retry/reset/logout).",
+      "id": "feature-implement-drag-and-drop-file-upload-functionality-for-images-throughout-the-admin-panel-allowing-administrators-to-drag-image-files-directly-into-upload-zones-instead-of-using-file-picker-dialogs",
+      "title": "Implement drag and drop file upload functionality for images throughout the admin panel, allowing administrators to drag image files directly into upload zones instead of using file picker dialogs.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-drag-to-reorder-functionality-for-images-allowing-administrators-to-reorder-images-by-dragging-them-to-new-positions-within-the-image-list-or-gallery",
+      "title": "Add drag-to-reorder functionality for images, allowing administrators to reorder images by dragging them to new positions within the image list or gallery.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-numbered-order-system-as-an-alternative-to-drag-to-reorder-allowing-administrators-to-assign-explicit-numeric-positions-to-images-for-precise-ordering-control",
+      "title": "Implement a numbered order system as an alternative to drag-to-reorder, allowing administrators to assign explicit numeric positions to images for precise ordering control.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-minimal-diagnostics-surface-for-admin-auth-failures-when-admin-verification-fails-backend-error-or-authorization-trap-display-the-parsed-error-message-english-and-provide-a-copyable-error-detail-section-suitable-for-sharing-during-support-debugging",
-      "title": "Add a minimal diagnostics surface for admin auth failures: when admin verification fails (backend error or authorization trap), display the parsed error message (English) and provide a copyable error detail section suitable for sharing during support/debugging.",
+      "id": "feature-enable-re-upload-and-replacement-functionality-for-all-existing-images-and-placeholders-across-the-site-including-offer-images-product-category-banners-homepage-banners-lookbook-images-product-images-and-the-site-logo",
+      "title": "Enable re-upload and replacement functionality for all existing images and placeholders across the site, including offer images, product category banners, homepage banners, lookbook images, product images, and the site logo.",
       "reqIds": [
         "REQ-4"
       ],
@@ -28,22 +44,48 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Ensure the backend exposes an `isCallerAdmin()` method used by the frontend and that it returns `true` only when the caller has the admin role.",
-      "reqIds": [
-        "REQ-1"
-      ],
+      "summary": "Add product deletion option in admin panel",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Implement an admin bootstrapping path so that admin login can succeed on a fresh deployment: if there are no admins yet, the first authenticated (non-anonymous) caller who attempts to access admin functionality is granted the admin role.",
-      "reqIds": [
-        "REQ-2"
-      ],
+      "summary": "Implement drag and drop image upload",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Add drag to reorder or numbered order system for images",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Allow re-upload/replace of all site images (offers, product category banners, placeholders)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Remove Explore buttons or add admin option to hide them",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Make banner title optional",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Make banner image clickable with admin-set redirect link",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "Fix broken admin login/sign-up (Internet Identity + admin role bootstrapping)",
+  "projectName": "Improve image upload and ordering system",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

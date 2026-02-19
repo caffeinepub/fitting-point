@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Copy, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { Copy, ChevronDown, ChevronUp, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -29,10 +29,11 @@ export default function AdminAuthDiagnostics({ error }: AdminAuthDiagnosticsProp
   return (
     <div className="space-y-3">
       <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
         <AlertDescription className="space-y-2">
           <p className="font-medium">{parsedError.message}</p>
           {parsedError.nextSteps && (
-            <p className="text-sm">{parsedError.nextSteps}</p>
+            <p className="text-sm opacity-90">{parsedError.nextSteps}</p>
           )}
         </AlertDescription>
       </Alert>
@@ -54,9 +55,16 @@ export default function AdminAuthDiagnostics({ error }: AdminAuthDiagnosticsProp
         </CollapsibleTrigger>
         <CollapsibleContent className="mt-2">
           <div className="rounded-md bg-muted p-3 space-y-2">
-            <pre className="text-xs font-mono whitespace-pre-wrap break-words text-muted-foreground">
-              {technicalDetails}
-            </pre>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Error Type:</p>
+              <p className="text-xs font-mono text-foreground">{parsedError.type}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">Error Message:</p>
+              <pre className="text-xs font-mono whitespace-pre-wrap break-words text-foreground">
+                {technicalDetails}
+              </pre>
+            </div>
             <Button
               onClick={handleCopy}
               variant="ghost"

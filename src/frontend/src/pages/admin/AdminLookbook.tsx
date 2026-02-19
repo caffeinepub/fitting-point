@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
+import MediaSlotUploader from '../../components/MediaSlotUploader';
 import { useGetAllLookbookImages, useAddLookbookImage, useGetAllProducts } from '../../hooks/useQueries';
 import type { LookbookImage } from '../../backend';
 import { ExternalBlob } from '../../backend';
@@ -36,8 +37,7 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
     description: '',
     taggedProducts: [] as string[],
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [lookbookImage, setLookbookImage] = useState<ExternalBlob | undefined>(undefined);
   const [uploading, setUploading] = useState(false);
 
   const filteredAndSortedImages = useMemo(() => {
@@ -56,8 +56,8 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!imageFile && !editingImage) {
-      toast.error('Please select an image');
+    if (!lookbookImage && !editingImage) {
+      toast.error('Please upload an image');
       return;
     }
 
@@ -68,21 +68,8 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
 
     try {
       setUploading(true);
-      setUploadProgress(0);
 
-      let imageBlob: ExternalBlob;
-
-      if (imageFile) {
-        const arrayBuffer = await imageFile.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        imageBlob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
-          setUploadProgress(percentage);
-        });
-      } else if (editingImage) {
-        imageBlob = editingImage.image;
-      } else {
-        throw new Error('No image available');
-      }
+      const imageBlob = lookbookImage || editingImage!.image;
 
       const lookbookData: LookbookImage = {
         id: editingImage?.id || `lookbook-${Date.now()}`,
@@ -100,7 +87,6 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
       toast.error(error.message || 'Failed to save lookbook image');
     } finally {
       setUploading(false);
-      setUploadProgress(0);
     }
   };
 
@@ -109,7 +95,7 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
       description: '',
       taggedProducts: [],
     });
-    setImageFile(null);
+    setLookbookImage(undefined);
     setEditingImage(null);
   };
 
@@ -119,6 +105,7 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
       description: image.description,
       taggedProducts: image.taggedProducts,
     });
+    setLookbookImage(image.image);
     setDialogOpen(true);
   };
 
@@ -151,23 +138,12 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="image">Image *</Label>
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) setImageFile(file);
-                  }}
-                  disabled={uploading}
+                <Label>Lookbook Image *</Label>
+                <MediaSlotUploader
+                  currentImage={lookbookImage}
+                  onImageChange={setLookbookImage}
+                  label="Upload Image"
                 />
-                {imageFile && (
-                  <p className="text-sm text-muted-foreground">Selected: {imageFile.name}</p>
-                )}
-                {editingImage && !imageFile && (
-                  <p className="text-sm text-muted-foreground">Current image will be kept</p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -207,21 +183,6 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
                 </div>
               </div>
 
-              {uploading && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Uploading...</span>
-                    <span>{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2">
-                    <div
-                      className="bg-gold h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="flex gap-2 pt-4">
                 <Button
                   type="button"
@@ -237,10 +198,10 @@ export default function AdminLookbook({ onNavigate }: AdminLookbookProps) {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={uploading}
+                  disabled={uploading || addLookbookImage.isPending}
                   className="flex-1 bg-gold hover:bg-gold/90 text-white"
                 >
-                  {uploading ? 'Uploading...' : editingImage ? 'Update Image' : 'Add Image'}
+                  {uploading || addLookbookImage.isPending ? 'Saving...' : editingImage ? 'Update Image' : 'Add Image'}
                 </Button>
               </div>
             </form>

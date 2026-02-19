@@ -10,14 +10,32 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export type Cart = Array<CartItem>;
+export interface BannerImage {
+  'id' : string,
+  'title' : string,
+  'order' : bigint,
+  'link' : [] | [string],
+  'description' : string,
+  'image' : ExternalBlob,
+}
+export interface Cart { 'items' : Array<CartItem> }
 export interface CartItem {
   'color' : string,
   'size' : string,
   'productId' : string,
   'quantity' : bigint,
 }
+export interface Category {
+  'name' : string,
+  'description' : string,
+  'isActive' : boolean,
+}
 export type ExternalBlob = Uint8Array;
+export interface Logo {
+  'link' : [] | [string],
+  'image' : ExternalBlob,
+  'altText' : string,
+}
 export interface LookbookImage {
   'id' : string,
   'description' : string,
@@ -48,6 +66,7 @@ export type ProductType = { 'accessory' : null } |
 export interface SiteContent {
   'heroText' : string,
   'footerItems' : Array<string>,
+  'companyName' : string,
   'sections' : Array<SiteContentBlock>,
   'darkModeEnabled' : boolean,
   'contactDetails' : string,
@@ -60,7 +79,12 @@ export interface SiteContentBlock {
 export type UsageCategory = { 'both' : null } |
   { 'hajj' : null } |
   { 'umrah' : null };
-export interface UserProfile { 'name' : string }
+export interface UserProfile {
+  'name' : string,
+  'email' : [] | [string],
+  'address' : [] | [string],
+  'phone' : [] | [string],
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -92,30 +116,48 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addBanner' : ActorMethod<
+    [string, ExternalBlob, string, string, [] | [string], bigint],
+    string
+  >,
   'addLookbookImage' : ActorMethod<[LookbookImage], undefined>,
   'addProduct' : ActorMethod<[Product], undefined>,
-  'addToCart' : ActorMethod<[CartItem], undefined>,
-  'adminDeleteProduct' : ActorMethod<[string], undefined>,
+  'addToCart' : ActorMethod<[Array<CartItem>], undefined>,
   'adminUpdateProduct' : ActorMethod<[string, Product], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'closeAdminSignupWindow' : ActorMethod<[], undefined>,
+  'createCategory' : ActorMethod<[string, string], string>,
+  'deleteCategory' : ActorMethod<[string], string>,
   'filterProductsByCategory' : ActorMethod<[string], Array<Product>>,
+  'getAllBanners' : ActorMethod<[], Array<BannerImage>>,
+  'getAllCategories' : ActorMethod<[], Array<Category>>,
   'getAllLookbookImages' : ActorMethod<[], Array<LookbookImage>>,
   'getAllProducts' : ActorMethod<[], Array<Product>>,
   'getBestsellers' : ActorMethod<[], Array<Product>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getCart' : ActorMethod<[], Cart>,
+  'getLogo' : ActorMethod<[], [] | [Logo]>,
   'getLookbookImage' : ActorMethod<[string], LookbookImage>,
   'getMostLovedProducts' : ActorMethod<[], Array<Product>>,
   'getNewProducts' : ActorMethod<[], Array<Product>>,
   'getProduct' : ActorMethod<[string], Product>,
   'getSiteContent' : ActorMethod<[], SiteContent>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isAdminSignupEnabled' : ActorMethod<[], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isReady' : ActorMethod<[], boolean>,
+  'registerAdmin' : ActorMethod<[], string>,
+  'removeBanner' : ActorMethod<[string], string>,
   'removeFromCart' : ActorMethod<[string, string, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'updateSiteContent' : ActorMethod<[string, string, boolean], undefined>,
+  'updateBannerOrder' : ActorMethod<[Array<[string, bigint]>], string>,
+  'updateCategoryDescription' : ActorMethod<[string, string], string>,
+  'updateLogo' : ActorMethod<[ExternalBlob, string, [] | [string]], undefined>,
+  'updateSiteContent' : ActorMethod<
+    [string, string, boolean, string],
+    undefined
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

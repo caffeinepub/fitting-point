@@ -1,155 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-    :root {
-        --radius: 0.75rem;
-        
-        /* Clean White & Royal Gold Premium Palette */
-        --background: 1 0 0;
-        --foreground: 0.18 0.01 40;
-        
-        --card: 1 0 0;
-        --card-foreground: 0.18 0.01 40;
-        
-        --popover: 1 0 0;
-        --popover-foreground: 0.18 0.01 40;
-        
-        /* Soft ivory primary */
-        --primary: 0.98 0.01 55;
-        --primary-foreground: 0.18 0.01 40;
-        
-        /* Light cream secondary */
-        --secondary: 0.97 0.01 60;
-        --secondary-foreground: 0.18 0.01 40;
-        
-        --muted: 0.96 0.01 55;
-        --muted-foreground: 0.48 0.005 40;
-        
-        /* Warm cream accent */
-        --accent: 0.96 0.02 50;
-        --accent-foreground: 0.18 0.01 40;
-        
-        --destructive: 0.55 0.22 25;
-        --destructive-foreground: 0.99 0 0;
-        
-        --border: 0.90 0.01 55;
-        --input: 0.90 0.01 55;
-        --ring: 0.65 0.18 45;
-        
-        /* Royal Gold - elegant and premium */
-        --gold: 0.65 0.18 45;
-        --gold-light: 0.75 0.15 50;
-        --gold-dark: 0.55 0.20 40;
-    }
+  :root {
+    --background: oklch(98% 0.01 90);
+    --foreground: oklch(20% 0.02 90);
+    --card: oklch(100% 0 0);
+    --card-foreground: oklch(20% 0.02 90);
+    --popover: oklch(100% 0 0);
+    --popover-foreground: oklch(20% 0.02 90);
+    --primary: oklch(55% 0.15 45);
+    --primary-foreground: oklch(98% 0.01 90);
+    --secondary: oklch(92% 0.02 90);
+    --secondary-foreground: oklch(20% 0.02 90);
+    --muted: oklch(94% 0.01 90);
+    --muted-foreground: oklch(50% 0.02 90);
+    --accent: oklch(92% 0.02 90);
+    --accent-foreground: oklch(20% 0.02 90);
+    --destructive: oklch(55% 0.20 25);
+    --destructive-foreground: oklch(98% 0.01 90);
+    --border: oklch(88% 0.02 90);
+    --input: oklch(88% 0.02 90);
+    --ring: oklch(55% 0.15 45);
+    --radius: 0.5rem;
+    
+    --gold: oklch(65% 0.15 75);
+    --gold-dark: oklch(55% 0.15 75);
+    --gold-light: oklch(85% 0.10 75);
+  }
 
-    .dark {
-        /* Deep charcoal background */
-        --background: 0.12 0.01 40;
-        --foreground: 0.98 0.005 50;
-        
-        --card: 0.16 0.01 40;
-        --card-foreground: 0.98 0.005 50;
-        
-        --popover: 0.14 0.01 40;
-        --popover-foreground: 0.98 0.005 50;
-        
-        /* Gold remains prominent in dark mode */
-        --primary: 0.20 0.02 45;
-        --primary-foreground: 0.98 0.005 50;
-        
-        --secondary: 0.24 0.02 50;
-        --secondary-foreground: 0.98 0.005 50;
-        
-        --muted: 0.24 0.02 45;
-        --muted-foreground: 0.62 0.005 50;
-        
-        --accent: 0.28 0.03 50;
-        --accent-foreground: 0.98 0.005 50;
-        
-        --destructive: 0.58 0.20 25;
-        --destructive-foreground: 0.98 0 0;
-        
-        --border: 0.28 0.02 45;
-        --input: 0.28 0.02 45;
-        --ring: 0.68 0.16 48;
-        
-        /* Brighter gold for dark mode */
-        --gold: 0.72 0.18 50;
-        --gold-light: 0.78 0.15 55;
-        --gold-dark: 0.62 0.20 45;
-    }
+  .dark {
+    --background: oklch(18% 0.02 90);
+    --foreground: oklch(95% 0.01 90);
+    --card: oklch(20% 0.02 90);
+    --card-foreground: oklch(95% 0.01 90);
+    --popover: oklch(20% 0.02 90);
+    --popover-foreground: oklch(95% 0.01 90);
+    --primary: oklch(65% 0.15 75);
+    --primary-foreground: oklch(18% 0.02 90);
+    --secondary: oklch(28% 0.02 90);
+    --secondary-foreground: oklch(95% 0.01 90);
+    --muted: oklch(28% 0.02 90);
+    --muted-foreground: oklch(65% 0.02 90);
+    --accent: oklch(28% 0.02 90);
+    --accent-foreground: oklch(95% 0.01 90);
+    --destructive: oklch(55% 0.20 25);
+    --destructive-foreground: oklch(95% 0.01 90);
+    --border: oklch(28% 0.02 90);
+    --input: oklch(28% 0.02 90);
+    --ring: oklch(65% 0.15 75);
+    
+    --gold: oklch(75% 0.15 75);
+    --gold-dark: oklch(65% 0.15 75);
+    --gold-light: oklch(85% 0.10 75);
+  }
 
-    * {
-        @apply border-border;
-    }
-    
-    body {
-        @apply bg-background text-foreground font-body;
-        font-feature-settings: "rlig" 1, "calt" 1;
-    }
-    
-    h1, h2, h3, h4, h5, h6 {
-        @apply font-heading;
-    }
-    
-    button, input, select, textarea, label {
-        @apply font-body;
-    }
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+
+  input, textarea, select {
+    @apply font-body;
+  }
 }
 
 @layer utilities {
-    .text-gold {
-        color: oklch(var(--gold));
-    }
-    
-    .bg-gold {
-        background-color: oklch(var(--gold));
-    }
-    
-    .border-gold {
-        border-color: oklch(var(--gold));
-    }
-    
-    .hover\:text-gold:hover {
-        color: oklch(var(--gold));
-    }
-    
-    .hover\:bg-gold:hover {
-        background-color: oklch(var(--gold));
-    }
-    
-    .hover\:border-gold:hover {
-        border-color: oklch(var(--gold));
-    }
-    
-    .hover\:bg-gold-dark:hover {
-        background-color: oklch(var(--gold-dark));
-    }
-    
-    .fill-gold {
-        fill: oklch(var(--gold));
-    }
-    
-    /* Premium smooth transitions */
-    .transition-premium {
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Enhanced section spacing utilities */
-    .section-spacing {
-        @apply py-20 px-4 lg:px-8 xl:px-12 2xl:px-16;
-    }
-    
-    .section-spacing-sm {
-        @apply py-12 px-4 lg:px-8 xl:px-12 2xl:px-16;
-    }
-    
-    .section-spacing-lg {
-        @apply py-24 px-4 lg:px-8 xl:px-12 2xl:px-16;
-    }
-}
+  .text-gold {
+    color: var(--gold);
+  }
 
-/* Import modern premium font pairing */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap');
+  .bg-gold {
+    background-color: var(--gold);
+  }
+
+  .border-gold {
+    border-color: var(--gold);
+  }
+
+  .bg-gold-dark {
+    background-color: var(--gold-dark);
+  }
+
+  .bg-gold-light {
+    background-color: var(--gold-light);
+  }
+
+  .section-spacing {
+    @apply py-16 md:py-20 lg:py-24 px-4 lg:px-8 xl:px-12 2xl:px-16;
+  }
+
+  .shadow-gold-soft {
+    box-shadow: 0 4px 20px -2px oklch(65% 0.15 75 / 0.3);
+  }
+
+  .shadow-premium-lg {
+    box-shadow: 0 10px 40px -5px oklch(0% 0 0 / 0.15), 0 4px 12px -2px oklch(65% 0.15 75 / 0.2);
+  }
+
+  .premium-transition {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  .premium-hover {
+    @apply premium-transition hover:shadow-premium-lg hover:-translate-y-1;
+  }
+
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-on-scroll {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+
+    .premium-transition,
+    .premium-hover {
+      transition-duration: 0ms;
+    }
+  }
+}

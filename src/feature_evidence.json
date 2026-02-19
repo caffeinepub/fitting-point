@@ -2,12 +2,58 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-fix-the-admin-panel-login-ui-so-it-works-with-internet-identity-instead-of-the-current-non-functional-admin-key-flow-when-the-viewer-is-anonymous-show-a-clear-internet-identity-login-sign-up-prompt-after-login-verify-admin-status-via-iscalleradmin-and-either-enter-the-admin-panel-or-show-an-insufficient-permissions-error-state-with-recovery-actions-retry-reset-logout",
-      "featureTitle": "Fix the admin panel login UI so it works with Internet Identity instead of the current non-functional Admin Key flow: when the viewer is anonymous, show a clear Internet Identity login/sign-up prompt; after login, verify admin status via `isCallerAdmin()` and either enter the admin panel or show an 'insufficient permissions' error state with recovery actions (retry/reset/logout).",
+      "featureId": "feature-implement-drag-and-drop-file-upload-functionality-for-images-throughout-the-admin-panel-allowing-administrators-to-drag-image-files-directly-into-upload-zones-instead-of-using-file-picker-dialogs",
+      "featureTitle": "Implement drag and drop file upload functionality for images throughout the admin panel, allowing administrators to drag image files directly into upload zones instead of using file picker dialogs.",
       "files": [
-        "frontend/src/components/AdminLayout.tsx",
-        "frontend/src/hooks/useAdminSession.ts",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/MediaSlotUploader.tsx",
+        "frontend/src/components/admin/HomepageBannersManager.tsx",
+        "frontend/src/pages/admin/AdminLookbook.tsx",
+        "frontend/src/pages/admin/AdminProducts.tsx",
+        "frontend/src/pages/admin/AdminSiteSettings.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-drag-to-reorder-functionality-for-images-allowing-administrators-to-reorder-images-by-dragging-them-to-new-positions-within-the-image-list-or-gallery",
+      "featureTitle": "Add drag-to-reorder functionality for images, allowing administrators to reorder images by dragging them to new positions within the image list or gallery.",
+      "files": [
+        "frontend/src/components/admin/DraggableImageList.tsx",
+        "frontend/src/components/admin/HomepageBannersManager.tsx",
+        "frontend/src/pages/admin/AdminProducts.tsx"
+      ],
+      "components": [
+        "blob-storage@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "authorization@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-a-numbered-order-system-as-an-alternative-to-drag-to-reorder-allowing-administrators-to-assign-explicit-numeric-positions-to-images-for-precise-ordering-control",
+      "featureTitle": "Implement a numbered order system as an alternative to drag-to-reorder, allowing administrators to assign explicit numeric positions to images for precise ordering control.",
+      "files": [
+        "frontend/src/components/admin/DraggableImageList.tsx",
+        "frontend/src/components/admin/HomepageBannersManager.tsx",
+        "frontend/src/pages/admin/AdminProducts.tsx"
       ],
       "components": [
         "blob-storage@4.0.0",
@@ -24,12 +70,14 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-minimal-diagnostics-surface-for-admin-auth-failures-when-admin-verification-fails-backend-error-or-authorization-trap-display-the-parsed-error-message-english-and-provide-a-copyable-error-detail-section-suitable-for-sharing-during-support-debugging",
-      "featureTitle": "Add a minimal diagnostics surface for admin auth failures: when admin verification fails (backend error or authorization trap), display the parsed error message (English) and provide a copyable error detail section suitable for sharing during support/debugging.",
+      "featureId": "feature-enable-re-upload-and-replacement-functionality-for-all-existing-images-and-placeholders-across-the-site-including-offer-images-product-category-banners-homepage-banners-lookbook-images-product-images-and-the-site-logo",
+      "featureTitle": "Enable re-upload and replacement functionality for all existing images and placeholders across the site, including offer images, product category banners, homepage banners, lookbook images, product images, and the site logo.",
       "files": [
-        "frontend/src/components/AdminLayout.tsx",
-        "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
-        "frontend/src/utils/adminAuthError.ts"
+        "frontend/src/components/MediaSlotUploader.tsx",
+        "frontend/src/components/admin/HomepageBannersManager.tsx",
+        "frontend/src/pages/admin/AdminLookbook.tsx",
+        "frontend/src/pages/admin/AdminProducts.tsx",
+        "frontend/src/pages/admin/AdminSiteSettings.tsx"
       ],
       "components": [
         "blob-storage@4.0.0",

@@ -1,12 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Fix broken admin login/sign-up by using Internet Identity end-to-end and correctly verifying/admin-bootstrapping roles via the backend.
+**Goal:** Enhance the admin panel's image management system with drag-and-drop upload, reordering capabilities, and comprehensive image replacement functionality.
 
 **Planned changes:**
-- Ensure the backend exposes an `isCallerAdmin()` method that matches the frontend candid/actor interface and returns `true` only for principals with the admin role.
-- Add an admin bootstrapping flow in the backend: on fresh deployments with no admins, promote the first authenticated (non-anonymous) principal who attempts to access admin functionality; never promote anonymous callers; stop auto-promotion once at least one admin exists.
-- Update the admin panel login gate UI to remove the non-functional Admin Key flow and instead prompt anonymous users to “Log in with Internet Identity”; after login, re-check `isCallerAdmin()` to either enter the admin dashboard or show an English “insufficient permissions” state with recovery actions (e.g., logout/switch account, retry verification, reset session).
-- Add a minimal diagnostics surface for admin auth failures: show an English error summary plus a collapsible/copyable technical detail section using existing `parseAdminAuthError` classification, without crashing the app.
+- Add drag-and-drop file upload zones throughout the admin panel for direct image uploads
+- Implement drag-to-reorder functionality for image lists and galleries
+- Add a numbered order system allowing direct position number editing for precise image ordering
+- Enable re-upload/replacement for all existing images including offer images, product category banners, homepage banners, lookbook images, product images, and site logo
+- Maintain existing click-to-upload functionality alongside new drag-and-drop features
 
-**User-visible outcome:** Admin access works via Internet Identity: anonymous users are prompted to log in, admins can enter the dashboard, non-admins see a clear permissions error with recovery options, and auth failures show copyable diagnostic details for support/debugging.
+**User-visible outcome:** Administrators can drag files directly into upload zones, reorder images by dragging them or editing position numbers, and replace any existing image or placeholder throughout the site with an improved upload interface.

@@ -1,152 +1,125 @@
-import { useState } from 'react';
 import { Heart, ShoppingCart } from 'lucide-react';
+import { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import type { Product } from '../backend';
-import { useGuestCart } from '../hooks/useGuestCart';
+import { Badge } from '@/components/ui/badge';
 import { useGuestWishlist } from '../hooks/useGuestWishlist';
+import { useGuestCart } from '../hooks/useGuestCart';
 import { toast } from 'sonner';
-import type { CatalogFilter } from '../App';
-import { getProductCardImages } from '../utils/productImageFallback';
 import { formatINR } from '../utils/currency';
+import { getProductCardImages } from '../utils/productImageFallback';
+import type { Product } from '../backend';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'shipping' | 'returns';
 
 interface ProductCardProps {
   product: Product;
-  onNavigate: (page: Page, productId?: string, filter?: CatalogFilter) => void;
+  onNavigate: (page: Page, productId?: string) => void;
 }
 
 export default function ProductCard({ product, onNavigate }: ProductCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
-  const { addToCart: addToGuestCart } = useGuestCart();
-  const { wishlist: guestWishlist, addToWishlist: addToGuestWishlist } = useGuestWishlist();
+  const { wishlist, addToWishlist, removeFromWishlist } = useGuestWishlist();
+  const { addToCart } = useGuestCart();
 
-  const isInWishlist = guestWishlist.includes(product.id);
+  const isInWishlist = wishlist.includes(product.id);
   const { primaryImage, secondaryImage, hasHoverSwap } = getProductCardImages(product);
+  const displaySecondaryImage = secondaryImage || primaryImage;
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (isInWishlist) {
+      removeFromWishlist(product.id);
+      toast.success('Removed from wishlist');
+    } else {
+      addToWishlist(product.id);
+      toast.success('Added to wishlist');
+    }
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    addToGuestCart({
+    const defaultSize = product.sizes[0] || 'One Size';
+    const defaultColor = product.colors[0] || 'Default';
+    addToCart({
       productId: product.id,
-      size: product.sizes[0] || 'One Size',
-      color: product.colors[0] || 'Default',
+      size: defaultSize,
+      color: defaultColor,
       quantity: BigInt(1),
     });
     toast.success('Added to cart');
   };
 
-  const handleWishlist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!isInWishlist) {
-      addToGuestWishlist(product.id);
-      toast.success('Added to wishlist');
-    } else {
-      toast.info('Already in wishlist');
-    }
-  };
-
   return (
     <Card
-      className="group cursor-pointer overflow-hidden border border-gold/10 hover:border-gold/40 transition-all duration-500 hover:shadow-premium-lg hover:-translate-y-1 bg-card/50 backdrop-blur-sm"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="group overflow-hidden border-gold/10 hover:border-gold/40 transition-all duration-500 hover:shadow-premium-lg hover:-translate-y-2 cursor-pointer"
       onClick={() => onNavigate('product', product.id)}
     >
-      {/* Tall portrait image container with stacked cross-fade */}
-      <div className="relative aspect-[3/4] overflow-hidden bg-gradient-to-br from-muted/30 to-muted/10">
-        {/* Stacked image container - no layout shift */}
+      <div className="relative aspect-[3/4] overflow-hidden bg-muted/10">
         <div className="absolute inset-0">
-          {/* Primary image - fades out on hover if secondary exists */}
           <img
             src={primaryImage}
             alt={product.name}
-            className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out ${
-              hasHoverSwap && isHovered
-                ? 'opacity-0 scale-105'
-                : 'opacity-100 scale-100'
-            } ${!hasHoverSwap ? 'group-hover:scale-105' : ''}`}
+            className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:opacity-0 group-hover:scale-110"
           />
-          
-          {/* Secondary image - fades in on hover (only if available) */}
-          {hasHoverSwap && secondaryImage && (
-            <img
-              src={secondaryImage}
-              alt={`${product.name} alternate view`}
-              className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ease-out ${
-                isHovered ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
-              }`}
-            />
-          )}
-
-          {/* Premium overlay gradient on hover */}
-          <div className={`absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent transition-opacity duration-500 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`} />
+          <img
+            src={displaySecondaryImage}
+            alt={product.name}
+            className="absolute inset-0 w-full h-full object-cover opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-110"
+          />
         </div>
 
-        {/* Top-left wishlist button */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+          {product.isNewProduct && (
+            <Badge className="bg-gold text-white border-0 shadow-md">New</Badge>
+          )}
+          {product.isBestseller && (
+            <Badge className="bg-gold-dark text-white border-0 shadow-md">Bestseller</Badge>
+          )}
+          {product.isMostLoved && (
+            <Badge className="bg-gold text-white border-0 shadow-md">Most Loved</Badge>
+          )}
+        </div>
+
         <Button
-          size="icon"
           variant="secondary"
-          className={`absolute top-3 left-3 z-10 w-10 h-10 rounded-full shadow-lg backdrop-blur-md transition-all duration-300 ${
-            isInWishlist
-              ? 'bg-gold text-white hover:bg-gold-dark scale-110'
-              : 'bg-white/90 hover:bg-gold hover:text-white hover:scale-110'
-          }`}
-          onClick={handleWishlist}
+          size="icon"
+          className="absolute top-3 right-3 z-10 bg-white/90 hover:bg-white shadow-md transition-all duration-300 hover:scale-110"
+          onClick={handleWishlistToggle}
         >
-          <Heart className={`h-4 w-4 transition-all duration-300 ${isInWishlist ? 'fill-current scale-110' : ''}`} />
+          <Heart
+            className={`h-5 w-5 transition-colors duration-300 ${
+              isInWishlist ? 'fill-gold text-gold' : 'text-muted-foreground'
+            }`}
+          />
         </Button>
 
-        {/* Bottom add-to-cart bar */}
-        <div className={`absolute bottom-0 left-0 right-0 z-10 transition-all duration-500 ${
-          isHovered ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-95'
-        }`}>
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
           <Button
-            className="w-full rounded-none bg-white/95 hover:bg-gold text-foreground hover:text-white transition-all duration-300 h-14 font-semibold backdrop-blur-md border-t border-gold/20 hover:border-gold/40 shadow-lg"
+            className="w-full bg-gold hover:bg-gold-dark text-white transition-all duration-300 hover:shadow-gold-soft hover:scale-105"
             onClick={handleAddToCart}
           >
-            <ShoppingCart className="mr-2 h-5 w-5" />
-            <span className="tracking-wide">Add to Cart</span>
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Add to Cart
           </Button>
         </div>
       </div>
 
-      {/* Product info */}
-      <div className="p-5 space-y-2 bg-gradient-to-b from-card to-card/80">
-        <h3 className="font-heading text-lg font-semibold text-foreground group-hover:text-gold transition-colors duration-300 line-clamp-1 tracking-wide">
+      <CardContent className="p-4">
+        <h3 className="font-serif text-lg font-semibold text-foreground group-hover:text-gold transition-colors duration-300 line-clamp-2 mb-2">
           {product.name}
         </h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 font-body leading-relaxed min-h-[2.5rem]">
+        <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
           {product.shortDescriptor}
         </p>
-        <div className="flex items-center justify-between pt-2 border-t border-gold/10">
-          <span className="text-xl font-bold text-gold tracking-wide font-heading">
-            {formatINR(product.price)}
-          </span>
-          {product.colors.length > 0 && (
-            <div className="flex gap-1.5">
-              {product.colors.slice(0, 4).map((color, idx) => (
-                <div
-                  key={idx}
-                  className="w-5 h-5 rounded-full border-2 border-gold/30 shadow-sm transition-transform duration-300 hover:scale-125"
-                  style={{ 
-                    backgroundColor: color.toLowerCase().replace(/\s+/g, ''),
-                  }}
-                  title={color}
-                />
-              ))}
-              {product.colors.length > 4 && (
-                <div className="w-5 h-5 rounded-full border-2 border-gold/30 bg-muted flex items-center justify-center">
-                  <span className="text-[10px] font-semibold text-muted-foreground">+{product.colors.length - 4}</span>
-                </div>
-              )}
-            </div>
+        <div className="flex items-center justify-between">
+          <p className="text-xl font-bold text-gold">{formatINR(Number(product.price))}</p>
+          {product.sizes.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {product.sizes.length} size{product.sizes.length > 1 ? 's' : ''}
+            </p>
           )}
         </div>
-      </div>
+      </CardContent>
     </Card>
   );
 }

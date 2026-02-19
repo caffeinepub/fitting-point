@@ -1,104 +1,20 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T12:43:35.986Z",
-  "summary": "Frontend adds an Internet Identity-based admin gate flow and a diagnostics component, but the backend diff does not show implementation of the required `isCallerAdmin()` method nor the admin bootstrapping behavior. Additionally, many unrelated UI/feature changes appear in the frontend summaries beyond the admin-auth fix scope.",
-  "missing_requirements": [
-    {
-      "id": "REQ-1",
-      "requirement": "Backend exposes an `isCallerAdmin()` method used by the frontend and it returns `true` only when the caller has the admin role (no candid mismatch).",
-      "reason": "Frontend calls `actor.isCallerAdmin()` (e.g., in `useAdminSession` and `useIsCallerAdmin`), but the shown/truncated backend diff does not include any `public/shared/query func isCallerAdmin()` implementation or evidence it exists/was added.",
-      "evidence": [
-        "backend/main.mo",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/hooks/useAdminSession.ts"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Admin bootstrapping on fresh deployment: if no admins exist, first non-anonymous caller attempting admin functionality becomes admin; anonymous never becomes admin; after an admin exists no auto-promotion.",
-      "reason": "No evidence in the backend diff summary of any logic that checks for “no admins yet” and promotes the first non-anonymous principal, nor any state additions/migration implementing this behavior. The added `backend/migration.mo` is a no-op.",
-      "evidence": [
-        "backend/main.mo",
-        "backend/migration.mo"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "When viewer is anonymous, admin page shows a clear “Log in with Internet Identity” prompt (English) and does not require Admin Key; after login re-check `isCallerAdmin()` and either enter admin dashboard or show insufficient permissions with recovery actions (retry/reset/logout).",
-      "reason": "The diff shows Internet Identity usage and some recovery actions (retry/reset/logout) wiring in `AdminLayout`, but the provided truncated content does not include the actual anonymous-state screen content/CTA text and does not conclusively show removal of any existing Admin Key UI.",
-      "evidence": [
-        "frontend/src/components/AdminLayout.tsx (truncated)"
-      ]
-    }
-  ],
-  "hallucinated_features": [
-    {
-      "description": "Added a new /__diagnostics route and runtime error boundary to prevent blank screens.",
-      "reason": "Not requested by any requirement; scope is admin auth/login UI + backend admin role bootstrap.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/App.tsx)"
-      ]
-    },
-    {
-      "description": "Broad UI/visual redesign and premium styling changes (fonts, OKLCH colors, shadows/animations, header/footer/logo changes).",
-      "reason": "Not requested; unrelated to fixing broken admin login/sign-up.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/index.css)",
-        "frontend-file-summaries.txt (frontend/tailwind.config.js)",
-        "frontend-file-summaries.txt (frontend/src/components/Header.tsx)",
-        "frontend-file-summaries.txt (frontend/src/components/Footer.tsx)"
-      ]
-    },
-    {
-      "description": "Large set of storefront feature/polish changes (homepage/banner carousel updates, catalog filtering enhancements, product card hover transitions, INR price formatting across pages, guest cart support).",
-      "reason": "Not requested; unrelated to admin auth bootstrapping/verification and diagnostics.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/HomePage.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/ProductCatalog.tsx)",
-        "frontend-file-summaries.txt (frontend/src/components/ProductCard.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/ProductDetail.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/Cart.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/Wishlist.tsx)"
-      ]
-    },
-    {
-      "description": "Updated About/Contact content including new phone number/email/WhatsApp link and brand story sections.",
-      "reason": "Not requested; unrelated to admin authentication fix.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/About.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/Contact.tsx)"
-      ]
-    },
-    {
-      "description": "Major expansions to admin feature pages (dashboard stats/system indicators, product management table with CRUD/search/sort, lookbook management with uploads/progress).",
-      "reason": "Not requested; requirements only address admin login gate + backend admin role verification/bootstrapping + diagnostics surface.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/pages/admin/AdminDashboard.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/admin/AdminProducts.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/admin/AdminLookbook.tsx)",
-        "frontend-file-summaries.txt (frontend/src/pages/admin/AdminCategories.tsx)"
-      ]
-    },
-    {
-      "description": "Added backend migration hook/file even though the shown migration is a no-op.",
-      "reason": "Not explicitly requested; build request says add `backend/migration.mo` only if schema changes require it, but no schema change evidence is shown and the migration does nothing.",
-      "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (with migration = Migration.run)"
-      ]
-    }
-  ],
-  "confidence": 0.72,
+  "generatedAt": "2026-02-18T17:10:59.811Z",
+  "summary": "The diff implements drag-and-drop file upload, drag-to-reorder, numbered ordering, and image replacement functionality across the admin panel. All four requirements (REQ-1 through REQ-4) are addressed with new components (DraggableImageList, MultiImageUploader) and updates to existing admin pages (products, lookbook, site settings, homepage banners). The implementation includes visual feedback, validation, and backend persistence.",
+  "missing_requirements": [],
+  "hallucinated_features": [],
+  "confidence": 0.92,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/AdminLayout.tsx",
-    "frontend/src/components/admin/AdminAuthDiagnostics.tsx",
-    "frontend/src/hooks/useAdminSession.ts",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/adminAuthError.ts",
+    "frontend/src/components/MediaSlotUploader.tsx",
+    "frontend/src/components/admin/DraggableImageList.tsx",
+    "frontend/src/components/admin/HomepageBannersManager.tsx",
+    "frontend/src/components/admin/MultiImageUploader.tsx",
+    "frontend/src/pages/admin/AdminLookbook.tsx",
+    "frontend/src/pages/admin/AdminProducts.tsx",
+    "frontend/src/pages/admin/AdminSiteSettings.tsx",
     "project_state.json"
   ]
 }

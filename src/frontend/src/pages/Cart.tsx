@@ -5,6 +5,7 @@ import { Separator } from '@/components/ui/separator';
 import { useGetAllProducts } from '../hooks/useQueries';
 import { useGuestCart } from '../hooks/useGuestCart';
 import { useInternetIdentity } from '../hooks/useInternetIdentity';
+import { calculateCartSummary } from '../utils/cartSummary';
 import { toast } from 'sonner';
 import { formatINR } from '../utils/currency';
 
@@ -20,22 +21,22 @@ export default function Cart({ onNavigate }: CartProps) {
   const { identity } = useInternetIdentity();
 
   const isAuthenticated = !!identity;
-  const cart = isAuthenticated ? [] : guestCart; // TODO: Add backend cart support
+  const cart = isAuthenticated ? [] : guestCart;
 
-  const getProductDetails = (productId: string) => {
-    return allProducts.find((p) => p.id === productId);
-  };
+  const cartWithDetails = cart.map(item => {
+    const product = allProducts.find(p => p.id === item.productId);
+    return {
+      ...item,
+      product,
+    };
+  });
+
+  const summary = calculateCartSummary(cartWithDetails);
 
   const handleRemove = (productId: string) => {
     removeFromGuestCart(productId);
     toast.success('Removed from cart');
   };
-
-  const subtotal = cart.reduce((sum, item) => {
-    const product = getProductDetails(item.productId);
-    if (!product) return sum;
-    return sum + Number(product.price) * Number(item.quantity);
-  }, 0);
 
   if (productsLoading) {
     return (
@@ -55,7 +56,7 @@ export default function Cart({ onNavigate }: CartProps) {
           <p className="text-muted-foreground text-lg">Your cart is empty</p>
           <Button
             onClick={() => onNavigate('catalog')}
-            className="bg-gold hover:bg-gold/90 text-white"
+            className="bg-gold hover:bg-gold/90 text-white transition-all duration-300 hover:shadow-gold-soft hover:scale-105"
           >
             Continue Shopping
           </Button>
@@ -69,20 +70,17 @@ export default function Cart({ onNavigate }: CartProps) {
       <h1 className="font-serif text-4xl md:text-5xl font-bold text-gold mb-8">Shopping Cart</h1>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
-          {cart.map((item, index) => {
-            const product = getProductDetails(item.productId);
+          {summary.items.map((item, index) => {
+            const product = allProducts.find(p => p.id === item.productId);
             if (!product) return null;
 
-            const lineTotal = Number(product.price) * Number(item.quantity);
-
             return (
-              <Card key={index} className="border-gold/20">
+              <Card key={index} className="border-gold/20 hover:border-gold/30 transition-colors duration-300">
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     <div
-                      className="w-24 h-24 rounded-lg overflow-hidden bg-muted/20 flex-shrink-0 cursor-pointer"
+                      className="w-24 h-24 rounded-lg overflow-hidden bg-muted/20 shrink-0 cursor-pointer transition-transform duration-300 hover:scale-105"
                       onClick={() => onNavigate('product', product.id)}
                     >
                       <img
@@ -94,7 +92,7 @@ export default function Cart({ onNavigate }: CartProps) {
 
                     <div className="flex-1 min-w-0">
                       <h3
-                        className="font-serif text-lg font-semibold text-foreground hover:text-gold transition-colors cursor-pointer line-clamp-1"
+                        className="font-serif text-lg font-semibold text-foreground hover:text-gold transition-colors duration-300 cursor-pointer line-clamp-1"
                         onClick={() => onNavigate('product', product.id)}
                       >
                         {product.name}
@@ -103,17 +101,17 @@ export default function Cart({ onNavigate }: CartProps) {
                         Size: {item.size} • Color: {item.color}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Quantity: {Number(item.quantity)}
+                        Quantity: {item.quantity}
                       </p>
                       <p className="text-lg font-bold text-gold mt-2">
-                        {formatINR(lineTotal)}
+                        {formatINR(item.lineTotal)}
                       </p>
                     </div>
 
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 transition-all duration-300 hover:scale-110"
                       onClick={() => handleRemove(item.productId)}
                     >
                       <Trash2 className="h-5 w-5" />
@@ -125,7 +123,6 @@ export default function Cart({ onNavigate }: CartProps) {
           })}
         </div>
 
-        {/* Order Summary */}
         <div className="lg:col-span-1">
           <Card className="border-gold/20 sticky top-24">
             <CardContent className="p-6 space-y-4">
@@ -135,7 +132,7 @@ export default function Cart({ onNavigate }: CartProps) {
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="font-semibold">{formatINR(subtotal)}</span>
+                  <span className="font-semibold">{formatINR(summary.subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
@@ -147,11 +144,11 @@ export default function Cart({ onNavigate }: CartProps) {
 
               <div className="flex justify-between text-lg font-serif">
                 <span>Total</span>
-                <span className="text-gold text-2xl">{formatINR(subtotal)}</span>
+                <span className="text-gold text-2xl">{formatINR(summary.subtotal)}</span>
               </div>
 
               <Button
-                className="w-full bg-gold hover:bg-gold/90 text-white"
+                className="w-full bg-gold hover:bg-gold/90 text-white transition-all duration-300 hover:shadow-gold-soft hover:scale-105"
                 size="lg"
                 onClick={() => onNavigate('checkout')}
               >
@@ -161,7 +158,7 @@ export default function Cart({ onNavigate }: CartProps) {
 
               <Button
                 variant="outline"
-                className="w-full border-gold/30 text-gold hover:bg-gold/5"
+                className="w-full border-gold/30 text-gold hover:bg-gold/5 transition-all duration-300"
                 onClick={() => onNavigate('catalog')}
               >
                 Continue Shopping

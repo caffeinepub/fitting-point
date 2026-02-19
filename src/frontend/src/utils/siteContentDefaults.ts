@@ -7,5 +7,6 @@ export function getSiteContentDefaults(): SiteContent {
     contactDetails: '<p>Salman Plaza, 82, Manik Bagh Rd, Nandanvan Colony, Indore, Madhya Pradesh 452001</p>',
     footerItems: ['Home', 'Shop', 'About', 'Contact'],
     darkModeEnabled: false,
+    companyName: 'Fitting Point',
   };
 }

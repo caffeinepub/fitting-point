@@ -65,8 +65,31 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
-export const Cart = IDL.Vec(CartItem);
+export const BannerImage = IDL.Record({
+  'id' : IDL.Text,
+  'title' : IDL.Text,
+  'order' : IDL.Nat,
+  'link' : IDL.Opt(IDL.Text),
+  'description' : IDL.Text,
+  'image' : ExternalBlob,
+});
+export const Category = IDL.Record({
+  'name' : IDL.Text,
+  'description' : IDL.Text,
+  'isActive' : IDL.Bool,
+});
+export const UserProfile = IDL.Record({
+  'name' : IDL.Text,
+  'email' : IDL.Opt(IDL.Text),
+  'address' : IDL.Opt(IDL.Text),
+  'phone' : IDL.Opt(IDL.Text),
+});
+export const Cart = IDL.Record({ 'items' : IDL.Vec(CartItem) });
+export const Logo = IDL.Record({
+  'link' : IDL.Opt(IDL.Text),
+  'image' : ExternalBlob,
+  'altText' : IDL.Text,
+});
 export const SiteContentBlock = IDL.Record({
   'title' : IDL.Text,
   'content' : IDL.Text,
@@ -75,6 +98,7 @@ export const SiteContentBlock = IDL.Record({
 export const SiteContent = IDL.Record({
   'heroText' : IDL.Text,
   'footerItems' : IDL.Vec(IDL.Text),
+  'companyName' : IDL.Text,
   'sections' : IDL.Vec(SiteContentBlock),
   'darkModeEnabled' : IDL.Bool,
   'contactDetails' : IDL.Text,
@@ -108,23 +132,33 @@ export const idlService = IDL.Service({
     ),
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addBanner' : IDL.Func(
+      [IDL.Text, ExternalBlob, IDL.Text, IDL.Text, IDL.Opt(IDL.Text), IDL.Nat],
+      [IDL.Text],
+      [],
+    ),
   'addLookbookImage' : IDL.Func([LookbookImage], [], []),
   'addProduct' : IDL.Func([Product], [], []),
-  'addToCart' : IDL.Func([CartItem], [], []),
-  'adminDeleteProduct' : IDL.Func([IDL.Text], [], []),
+  'addToCart' : IDL.Func([IDL.Vec(CartItem)], [], []),
   'adminUpdateProduct' : IDL.Func([IDL.Text, Product], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'closeAdminSignupWindow' : IDL.Func([], [], []),
+  'createCategory' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+  'deleteCategory' : IDL.Func([IDL.Text], [IDL.Text], []),
   'filterProductsByCategory' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(Product)],
       ['query'],
     ),
+  'getAllBanners' : IDL.Func([], [IDL.Vec(BannerImage)], ['query']),
+  'getAllCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
   'getAllLookbookImages' : IDL.Func([], [IDL.Vec(LookbookImage)], ['query']),
   'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getBestsellers' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getCart' : IDL.Func([], [Cart], ['query']),
+  'getLogo' : IDL.Func([], [IDL.Opt(Logo)], ['query']),
   'getLookbookImage' : IDL.Func([IDL.Text], [LookbookImage], ['query']),
   'getMostLovedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
   'getNewProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
@@ -135,11 +169,25 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'isAdminSignupEnabled' : IDL.Func([], [IDL.Bool], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isReady' : IDL.Func([], [IDL.Bool], ['query']),
+  'registerAdmin' : IDL.Func([], [IDL.Text], []),
+  'removeBanner' : IDL.Func([IDL.Text], [IDL.Text], []),
   'removeFromCart' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-  'updateSiteContent' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool], [], []),
+  'updateBannerOrder' : IDL.Func(
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat))],
+      [IDL.Text],
+      [],
+    ),
+  'updateCategoryDescription' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+  'updateLogo' : IDL.Func([ExternalBlob, IDL.Text, IDL.Opt(IDL.Text)], [], []),
+  'updateSiteContent' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Bool, IDL.Text],
+      [],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -202,8 +250,31 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
-  const Cart = IDL.Vec(CartItem);
+  const BannerImage = IDL.Record({
+    'id' : IDL.Text,
+    'title' : IDL.Text,
+    'order' : IDL.Nat,
+    'link' : IDL.Opt(IDL.Text),
+    'description' : IDL.Text,
+    'image' : ExternalBlob,
+  });
+  const Category = IDL.Record({
+    'name' : IDL.Text,
+    'description' : IDL.Text,
+    'isActive' : IDL.Bool,
+  });
+  const UserProfile = IDL.Record({
+    'name' : IDL.Text,
+    'email' : IDL.Opt(IDL.Text),
+    'address' : IDL.Opt(IDL.Text),
+    'phone' : IDL.Opt(IDL.Text),
+  });
+  const Cart = IDL.Record({ 'items' : IDL.Vec(CartItem) });
+  const Logo = IDL.Record({
+    'link' : IDL.Opt(IDL.Text),
+    'image' : ExternalBlob,
+    'altText' : IDL.Text,
+  });
   const SiteContentBlock = IDL.Record({
     'title' : IDL.Text,
     'content' : IDL.Text,
@@ -212,6 +283,7 @@ export const idlFactory = ({ IDL }) => {
   const SiteContent = IDL.Record({
     'heroText' : IDL.Text,
     'footerItems' : IDL.Vec(IDL.Text),
+    'companyName' : IDL.Text,
     'sections' : IDL.Vec(SiteContentBlock),
     'darkModeEnabled' : IDL.Bool,
     'contactDetails' : IDL.Text,
@@ -245,23 +317,40 @@ export const idlFactory = ({ IDL }) => {
       ),
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addBanner' : IDL.Func(
+        [
+          IDL.Text,
+          ExternalBlob,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(IDL.Text),
+          IDL.Nat,
+        ],
+        [IDL.Text],
+        [],
+      ),
     'addLookbookImage' : IDL.Func([LookbookImage], [], []),
     'addProduct' : IDL.Func([Product], [], []),
-    'addToCart' : IDL.Func([CartItem], [], []),
-    'adminDeleteProduct' : IDL.Func([IDL.Text], [], []),
+    'addToCart' : IDL.Func([IDL.Vec(CartItem)], [], []),
     'adminUpdateProduct' : IDL.Func([IDL.Text, Product], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'closeAdminSignupWindow' : IDL.Func([], [], []),
+    'createCategory' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
+    'deleteCategory' : IDL.Func([IDL.Text], [IDL.Text], []),
     'filterProductsByCategory' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(Product)],
         ['query'],
       ),
+    'getAllBanners' : IDL.Func([], [IDL.Vec(BannerImage)], ['query']),
+    'getAllCategories' : IDL.Func([], [IDL.Vec(Category)], ['query']),
     'getAllLookbookImages' : IDL.Func([], [IDL.Vec(LookbookImage)], ['query']),
     'getAllProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getBestsellers' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getCart' : IDL.Func([], [Cart], ['query']),
+    'getLogo' : IDL.Func([], [IDL.Opt(Logo)], ['query']),
     'getLookbookImage' : IDL.Func([IDL.Text], [LookbookImage], ['query']),
     'getMostLovedProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
     'getNewProducts' : IDL.Func([], [IDL.Vec(Product)], ['query']),
@@ -272,11 +361,33 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'isAdminSignupEnabled' : IDL.Func([], [IDL.Bool], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isReady' : IDL.Func([], [IDL.Bool], ['query']),
+    'registerAdmin' : IDL.Func([], [IDL.Text], []),
+    'removeBanner' : IDL.Func([IDL.Text], [IDL.Text], []),
     'removeFromCart' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
-    'updateSiteContent' : IDL.Func([IDL.Text, IDL.Text, IDL.Bool], [], []),
+    'updateBannerOrder' : IDL.Func(
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Nat))],
+        [IDL.Text],
+        [],
+      ),
+    'updateCategoryDescription' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Text],
+        [],
+      ),
+    'updateLogo' : IDL.Func(
+        [ExternalBlob, IDL.Text, IDL.Opt(IDL.Text)],
+        [],
+        [],
+      ),
+    'updateSiteContent' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Bool, IDL.Text],
+        [],
+        [],
+      ),
   });
 };
 

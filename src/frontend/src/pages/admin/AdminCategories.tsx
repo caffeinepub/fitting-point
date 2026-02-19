@@ -1,10 +1,24 @@
 import { useState, useMemo } from 'react';
-import { FolderTree, Search, ArrowUpDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Plus, Edit, Trash2, Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useGetAllProducts } from '../../hooks/useQueries';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { toast } from 'sonner';
+import AdminLayout from '../../components/AdminLayout';
+import {
+  useGetAllCategories,
+  useCreateCategory,
+  useUpdateCategoryDescription,
+  useDeleteCategory,
+  useGetAllProducts,
+} from '../../hooks/useQueries';
+import type { Category } from '../../backend';
+import { parseAdminAuthError } from '../../utils/adminAuthError';
 
 type Page = 'home' | 'catalog' | 'product' | 'cart' | 'wishlist' | 'lookbook' | 'about' | 'contact' | 'admin' | 'admin-products' | 'admin-lookbook' | 'admin-categories' | 'admin-sessions' | 'admin-site-settings' | 'shipping' | 'returns';
 
@@ -16,44 +30,56 @@ type SortField = 'name' | 'count';
 type SortOrder = 'asc' | 'desc';
 
 export default function AdminCategories({ onNavigate }: AdminCategoriesProps) {
-  const { data: products = [], isLoading } = useGetAllProducts();
+  const { data: categories = [], isLoading } = useGetAllCategories();
+  const { data: products = [] } = useGetAllProducts();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategoryDescription();
+  const deleteCategory = useDeleteCategory();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
-  const categoryStats = useMemo(() => {
-    return products.reduce((acc, product) => {
-      const category = product.category;
-      if (!acc[category]) {
-        acc[category] = { count: 0, products: [] };
-      }
-      acc[category].count++;
-      acc[category].products.push(product);
-      return acc;
-    }, {} as Record<string, { count: number; products: any[] }>);
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+  });
+
+  // Calculate product counts per category
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach((product) => {
+      counts[product.category] = (counts[product.category] || 0) + 1;
+    });
+    return counts;
   }, [products]);
 
   const filteredAndSortedCategories = useMemo(() => {
-    let categories = Object.entries(categoryStats)
-      .map(([name, data]) => ({
-        name,
-        count: data.count,
-        products: data.products,
-      }))
-      .filter((cat) => cat.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    let filtered = categories.filter((category) => {
+      const matchesSearch =
+        category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        category.description.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
 
-    categories.sort((a, b) => {
+    filtered.sort((a, b) => {
       let comparison = 0;
       if (sortField === 'name') {
         comparison = a.name.localeCompare(b.name);
       } else if (sortField === 'count') {
-        comparison = a.count - b.count;
+        const countA = categoryCounts[a.name] || 0;
+        const countB = categoryCounts[b.name] || 0;
+        comparison = countA - countB;
       }
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
-    return categories;
-  }, [categoryStats, searchTerm, sortField, sortOrder]);
+    return filtered;
+  }, [categories, searchTerm, sortField, sortOrder, categoryCounts]);
 
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
@@ -64,117 +90,285 @@ export default function AdminCategories({ onNavigate }: AdminCategoriesProps) {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Search and Sort */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search categories..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toggleSort('name')}
-                className={sortField === 'name' ? 'border-gold text-gold' : ''}
-              >
-                Name
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => toggleSort('count')}
-                className={sortField === 'count' ? 'border-gold text-gold' : ''}
-              >
-                Product Count
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      {/* Categories List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-serif text-2xl text-gold flex items-center gap-2">
-            <FolderTree className="h-6 w-6" />
-            Product Categories ({filteredAndSortedCategories.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-12">
-              <div className="h-12 w-12 border-4 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-muted-foreground mt-4">Loading categories...</p>
-            </div>
-          ) : filteredAndSortedCategories.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {searchTerm ? 'No categories match your search.' : 'No categories found. Add products to create categories.'}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredAndSortedCategories.map((category) => (
-                <div
-                  key={category.name}
-                  className="p-6 border border-gold/20 rounded-lg hover:border-gold transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-serif text-xl text-gold">{category.name}</h3>
-                    <Badge variant="secondary" className="bg-gold/10 text-gold">
-                      {category.count} {category.count === 1 ? 'product' : 'products'}
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {category.products.slice(0, 4).map((product) => (
-                      <div key={product.id} className="space-y-2">
-                        <img
-                          src={product.images[0]?.getDirectURL()}
-                          alt={product.name}
-                          className="w-full h-32 object-cover rounded-md border border-gold/20"
-                        />
-                        <p className="text-sm font-medium line-clamp-1">{product.name}</p>
-                        <p className="text-xs text-gold">${(Number(product.price) / 100).toFixed(2)}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {category.count > 4 && (
-                    <p className="text-sm text-muted-foreground mt-4">
-                      +{category.count - 4} more {category.count - 4 === 1 ? 'product' : 'products'}
+    if (!formData.name.trim()) {
+      toast.error('Please enter a category name');
+      return;
+    }
+
+    try {
+      if (editingCategory) {
+        await updateCategory.mutateAsync({
+          name: editingCategory.name,
+          newDescription: formData.description.trim(),
+        });
+        toast.success('Category updated successfully');
+      } else {
+        await createCategory.mutateAsync({
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+        });
+        toast.success('Category created successfully');
+      }
+
+      setDialogOpen(false);
+      resetForm();
+    } catch (error: any) {
+      const parsed = parseAdminAuthError(error);
+      toast.error(parsed.message, {
+        description: parsed.nextSteps,
+      });
+    }
+  };
+
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      description: category.description,
+    });
+    setDialogOpen(true);
+  };
+
+  const handleDeleteClick = (category: Category) => {
+    setCategoryToDelete(category);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!categoryToDelete) return;
+
+    const productCount = categoryCounts[categoryToDelete.name] || 0;
+    if (productCount > 0) {
+      toast.error('Cannot delete category', {
+        description: `This category has ${productCount} product(s). Please reassign or remove those products first.`,
+      });
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+      return;
+    }
+
+    try {
+      await deleteCategory.mutateAsync(categoryToDelete.name);
+      toast.success('Category deleted successfully');
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
+    } catch (error: any) {
+      const parsed = parseAdminAuthError(error);
+      toast.error(parsed.message, {
+        description: parsed.nextSteps,
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      description: '',
+    });
+    setEditingCategory(null);
+  };
+
+  return (
+    <AdminLayout currentPage="admin-categories" onNavigate={onNavigate} title="Category Management">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Categories</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage product categories
+            </p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button size="lg">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Category Name *</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="e.g., Hajj Essentials"
+                    disabled={!!editingCategory}
+                  />
+                  {editingCategory && (
+                    <p className="text-xs text-muted-foreground">
+                      Category name cannot be changed. Create a new category if needed.
                     </p>
                   )}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Brief description of this category"
+                    rows={3}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createCategory.isPending || updateCategory.isPending}
+                  >
+                    {createCategory.isPending || updateCategory.isPending
+                      ? 'Saving...'
+                      : editingCategory
+                      ? 'Update Category'
+                      : 'Create Category'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
 
-      {/* Category Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-serif text-2xl text-gold">Category Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 text-sm text-muted-foreground">
-            <p>
-              Categories are automatically created when you add products. Each product must belong to a category.
-            </p>
-            <p>
-              To manage categories, edit or delete products in the Products section.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+        {/* Search and Filters */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Search & Filter</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search categories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Categories Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Categories ({filteredAndSortedCategories.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading categories...</div>
+            ) : filteredAndSortedCategories.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchTerm ? 'No categories found matching your search' : 'No categories yet. Create your first category!'}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort('name')}
+                        className="flex items-center gap-2 hover:text-foreground"
+                      >
+                        Name
+                        <ArrowUpDown className="h-4 w-4" />
+                      </button>
+                    </TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>
+                      <button
+                        onClick={() => toggleSort('count')}
+                        className="flex items-center gap-2 hover:text-foreground"
+                      >
+                        Products
+                        <ArrowUpDown className="h-4 w-4" />
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAndSortedCategories.map((category) => (
+                    <TableRow key={category.name}>
+                      <TableCell className="font-medium">{category.name}</TableCell>
+                      <TableCell className="text-muted-foreground max-w-md truncate">
+                        {category.description || '—'}
+                      </TableCell>
+                      <TableCell>{categoryCounts[category.name] || 0}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(category)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteClick(category)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Category</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete the category "{categoryToDelete?.name}"?
+                {categoryToDelete && categoryCounts[categoryToDelete.name] > 0 && (
+                  <span className="block mt-2 text-destructive font-medium">
+                    Warning: This category has {categoryCounts[categoryToDelete.name]} product(s).
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setCategoryToDelete(null)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </AdminLayout>
   );
 }
