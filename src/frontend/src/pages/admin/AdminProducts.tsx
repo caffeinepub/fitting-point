@@ -10,11 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import AdminLayout from '../../components/AdminLayout';
-import MultiImageUploader from '../../components/admin/MultiImageUploader';
-import DraggableImageList from '../../components/admin/DraggableImageList';
 import {
   useGetAllProducts,
   useAddProduct,
@@ -65,9 +62,12 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
     isMostLoved: false,
     isNewProduct: false,
   });
-  const [productImages, setProductImages] = useState<ExternalBlob[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
 
+  // Use managed categories plus product-derived categories for backward compatibility
+  // Filter out empty/whitespace category names to prevent SelectItem errors
   const allCategoryNames = useMemo(() => {
     const managedCategories = categories.map((c) => c.name);
     const productCategories = [...new Set(products.map((p) => p.category))];
@@ -112,8 +112,8 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (productImages.length === 0 && !editingProduct) {
-      toast.error('Please add at least one image');
+    if (imageFiles.length === 0 && !editingProduct) {
+      toast.error('Please select at least one image');
       return;
     }
 
@@ -124,7 +124,25 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
 
     try {
       setUploading(true);
+      setUploadProgress(0);
 
+      let imageBlobs: ExternalBlob[] = [];
+
+      if (imageFiles.length > 0) {
+        for (let i = 0; i < imageFiles.length; i++) {
+          const file = imageFiles[i];
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+          const blob = ExternalBlob.fromBytes(uint8Array).withUploadProgress((percentage) => {
+            setUploadProgress(Math.round(((i + percentage / 100) / imageFiles.length) * 100));
+          });
+          imageBlobs.push(blob);
+        }
+      } else if (editingProduct) {
+        imageBlobs = editingProduct.images;
+      }
+
+      // Build ProductType
       let productType: ProductType | undefined = undefined;
       if (formData.productType) {
         if (formData.productType === 'clothing') {
@@ -140,6 +158,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
         }
       }
 
+      // Build UsageCategory (enum)
       let usageCategory: UsageCategory | undefined = undefined;
       if (formData.usageCategory) {
         if (formData.usageCategory === 'hajj') {
@@ -160,7 +179,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
         category: formData.category.trim(),
         sizes: formData.sizes.split(',').map((s) => s.trim()).filter(Boolean),
         colors: formData.colors.split(',').map((c) => c.trim()).filter(Boolean),
-        images: productImages,
+        images: imageBlobs,
         productType,
         usageCategory,
         isBestseller: formData.isBestseller,
@@ -185,6 +204,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       });
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -222,7 +242,6 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       isMostLoved: product.isMostLoved,
       isNewProduct: product.isNewProduct,
     });
-    setProductImages(product.images);
     setDialogOpen(true);
   };
 
@@ -242,19 +261,9 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
       isMostLoved: false,
       isNewProduct: false,
     });
-    setProductImages([]);
+    setImageFiles([]);
     setEditingProduct(null);
-  };
-
-  const imageItems = productImages.map((img, idx) => ({
-    id: `img-${idx}`,
-    image: img,
-    order: idx,
-  }));
-
-  const handleImageReorder = (reorderedItems: typeof imageItems) => {
-    const reorderedImages = reorderedItems.map((item) => item.image);
-    setProductImages(reorderedImages);
+    setUploadProgress(0);
   };
 
   return (
@@ -272,43 +281,11 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Images Section */}
-                <div className="space-y-4">
-                  <Label>Product Images *</Label>
-                  <Tabs defaultValue="upload" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="upload">Upload Images</TabsTrigger>
-                      <TabsTrigger value="reorder">Reorder Images</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="upload" className="space-y-4">
-                      <MultiImageUploader
-                        images={productImages}
-                        onImagesChange={setProductImages}
-                        maxImages={10}
-                      />
-                    </TabsContent>
-                    <TabsContent value="reorder" className="space-y-4">
-                      <DraggableImageList
-                        images={imageItems}
-                        onChange={handleImageReorder}
-                        showNumberedControls={true}
-                        onRemove={(id) => {
-                          const index = imageItems.findIndex((item) => item.id === id);
-                          if (index !== -1) {
-                            const newImages = productImages.filter((_, i) => i !== index);
-                            setProductImages(newImages);
-                          }
-                        }}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Product Name *</Label>
@@ -390,7 +367,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={SELECT_ALL_SENTINEL}>Select type</SelectItem>
+                        <SelectItem value={SELECT_ALL_SENTINEL}>None</SelectItem>
                         <SelectItem value="clothing">Clothing</SelectItem>
                         <SelectItem value="accessory">Accessory</SelectItem>
                         <SelectItem value="footwear">Footwear</SelectItem>
@@ -406,7 +383,6 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                         id="productTypeOther"
                         value={formData.productTypeOther}
                         onChange={(e) => setFormData({ ...formData, productTypeOther: e.target.value })}
-                        placeholder="Enter product type"
                       />
                     </div>
                   )}
@@ -426,7 +402,7 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                         <SelectValue placeholder="Select usage" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={SELECT_ALL_SENTINEL}>Select usage</SelectItem>
+                        <SelectItem value={SELECT_ALL_SENTINEL}>None</SelectItem>
                         <SelectItem value="hajj">Hajj</SelectItem>
                         <SelectItem value="umrah">Umrah</SelectItem>
                         <SelectItem value="both">Both</SelectItem>
@@ -456,71 +432,88 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Product Images {!editingProduct && '*'}</Label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setImageFiles(files);
+                    }}
+                  />
+                  {imageFiles.length > 0 && (
+                    <p className="text-sm text-muted-foreground">{imageFiles.length} file(s) selected</p>
+                  )}
+                  {editingProduct && imageFiles.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      Current: {editingProduct.images.length} image(s) (upload new to replace)
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-3">
-                  <Label>Product Flags</Label>
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="isBestseller"
-                        checked={formData.isBestseller}
-                        onCheckedChange={(checked) =>
-                          setFormData({ ...formData, isBestseller: checked as boolean })
-                        }
-                      />
-                      <Label htmlFor="isBestseller" className="font-normal cursor-pointer">
-                        Bestseller
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="isMostLoved"
-                        checked={formData.isMostLoved}
-                        onCheckedChange={(checked) =>
-                          setFormData({ ...formData, isMostLoved: checked as boolean })
-                        }
-                      />
-                      <Label htmlFor="isMostLoved" className="font-normal cursor-pointer">
-                        Most Loved
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="isNewProduct"
-                        checked={formData.isNewProduct}
-                        onCheckedChange={(checked) =>
-                          setFormData({ ...formData, isNewProduct: checked as boolean })
-                        }
-                      />
-                      <Label htmlFor="isNewProduct" className="font-normal cursor-pointer">
-                        New Product
-                      </Label>
-                    </div>
+                  <Label>Special Flags</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isBestseller"
+                      checked={formData.isBestseller}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isBestseller: checked as boolean })
+                      }
+                    />
+                    <Label htmlFor="isBestseller" className="font-normal cursor-pointer">
+                      Bestseller
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isMostLoved"
+                      checked={formData.isMostLoved}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isMostLoved: checked as boolean })
+                      }
+                    />
+                    <Label htmlFor="isMostLoved" className="font-normal cursor-pointer">
+                      Most Loved
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="isNewProduct"
+                      checked={formData.isNewProduct}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isNewProduct: checked as boolean })
+                      }
+                    />
+                    <Label htmlFor="isNewProduct" className="font-normal cursor-pointer">
+                      New Product
+                    </Label>
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setDialogOpen(false);
-                      resetForm();
-                    }}
-                    disabled={uploading}
-                    className="flex-1"
-                  >
+                {uploading && (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-secondary rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancel
                   </Button>
-                  <Button
-                    type="submit"
-                    disabled={uploading || addProduct.isPending || updateProduct.isPending}
-                    className="flex-1"
-                  >
-                    {uploading || addProduct.isPending || updateProduct.isPending
-                      ? 'Saving...'
-                      : editingProduct
-                      ? 'Update Product'
-                      : 'Add Product'}
+                  <Button type="submit" disabled={uploading}>
+                    {uploading ? 'Uploading...' : editingProduct ? 'Update Product' : 'Add Product'}
                   </Button>
                 </div>
               </form>
@@ -528,12 +521,14 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
           </Dialog>
         </div>
 
-        {/* Search and Filter */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
+          <CardHeader>
+            <CardTitle>Product List</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-1 relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search products..."
@@ -542,96 +537,128 @@ export default function AdminProducts({ onNavigate }: AdminProductsProps) {
                     className="pl-10"
                   />
                 </div>
-              </div>
-              <Select value={categoryFilter || SELECT_ALL_SENTINEL} onValueChange={(val) => setCategoryFilter(fromSelectValue(val))}>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SELECT_ALL_SENTINEL}>All Categories</SelectItem>
-                  {allCategoryNames.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Products Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Products ({filteredAndSortedProducts.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <p className="text-center text-muted-foreground py-8">Loading products...</p>
-            ) : filteredAndSortedProducts.length === 0 ? (
-              <div className="text-center py-12">
-                <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No products found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Image</TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => toggleSort('name')} className="h-8 px-2">
-                          Name
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => toggleSort('category')} className="h-8 px-2">
-                          Category
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>
-                        <Button variant="ghost" onClick={() => toggleSort('price')} className="h-8 px-2">
-                          Price
-                          <ArrowUpDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </TableHead>
-                      <TableHead>Flags</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAndSortedProducts.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <img
-                            src={getProductThumbnail(product)}
-                            alt={product.name}
-                            className="w-12 h-12 object-cover rounded"
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.category}</TableCell>
-                        <TableCell>{formatINR(Number(product.price) / 100)}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1 flex-wrap">
-                            {product.isBestseller && <Badge variant="secondary">Bestseller</Badge>}
-                            {product.isMostLoved && <Badge variant="secondary">Most Loved</Badge>}
-                            {product.isNewProduct && <Badge variant="secondary">New</Badge>}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                <Select 
+                  value={toSelectValue(categoryFilter)} 
+                  onValueChange={(val) => setCategoryFilter(fromSelectValue(val))}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={SELECT_ALL_SENTINEL}>All Categories</SelectItem>
+                    {allCategoryNames.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
                     ))}
-                  </TableBody>
-                </Table>
+                  </SelectContent>
+                </Select>
               </div>
-            )}
+
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading products...</div>
+              ) : filteredAndSortedProducts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No products found. Add your first product to get started.
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Image</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleSort('name')}
+                            className="hover:bg-transparent"
+                          >
+                            Name
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleSort('category')}
+                            className="hover:bg-transparent"
+                          >
+                            Category
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleSort('price')}
+                            className="hover:bg-transparent"
+                          >
+                            Price
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                          </Button>
+                        </TableHead>
+                        <TableHead>Flags</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell>
+                            <div className="w-16 h-16 rounded overflow-hidden bg-muted flex items-center justify-center">
+                              {product.images.length > 0 ? (
+                                <img
+                                  src={getProductThumbnail(product)}
+                                  alt={product.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-sm text-muted-foreground">{product.shortDescriptor}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{product.category}</TableCell>
+                          <TableCell>{formatINR(Number(product.price) / 100)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {product.isBestseller && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Bestseller
+                                </Badge>
+                              )}
+                              {product.isMostLoved && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Most Loved
+                                </Badge>
+                              )}
+                              {product.isNewProduct && (
+                                <Badge variant="secondary" className="text-xs">
+                                  New
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(product)}>
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,99 +1,51 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T17:10:59.815Z",
+  "generatedAt": "2026-02-18T10:35:53.341Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 2,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement drag and drop file upload functionality for images throughout the admin panel, allowing administrators to drag image files directly into upload zones instead of using file picker dialogs.",
+        "summary": "Fix the runtime crash \"A <Select.Item /> must have a value prop that is not an empty string\" by removing/replacing any <SelectItem value=\"\"> usage in the product catalog filters and ensuring the UI still supports an \"All\"/\"no filter\" state without using an empty string SelectItem value.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/MediaSlotUploader.tsx",
-          "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/pages/admin/AdminLookbook.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "frontend/src/pages/admin/AdminSiteSettings.tsx"
+          "frontend/src/utils/selectSentinels.ts",
+          "frontend/src/pages/ProductCatalog.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/MediaSlotUploader.tsx",
-          "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/pages/admin/AdminLookbook.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "frontend/src/pages/admin/AdminSiteSettings.tsx"
+          "frontend/src/utils/selectSentinels.ts",
+          "frontend/src/pages/ProductCatalog.tsx"
         ]
       },
       {
         "id": "REQ-2",
-        "summary": "Add drag-to-reorder functionality for images, allowing administrators to reorder images by dragging them to new positions within the image list or gallery.",
+        "summary": "Audit the admin products page and any other product-related pages/components that render Shadcn <SelectItem /> options, and ensure no <SelectItem /> is rendered with an empty-string value (including dynamically-generated items where the underlying value might be ''). Add guards so that empty/invalid option values are filtered out or mapped to a non-empty sentinel value.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/admin/DraggableImageList.tsx",
           "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx"
+          "frontend/src/utils/selectSentinels.ts"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/DraggableImageList.tsx",
           "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Implement a numbered order system as an alternative to drag-to-reorder, allowing administrators to assign explicit numeric positions to images for precise ordering control.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/admin/NumberedImageOrderControls.tsx",
-          "frontend/src/components/admin/DraggableImageList.tsx",
-          "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/admin/DraggableImageList.tsx",
-          "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Enable re-upload and replacement functionality for all existing images and placeholders across the site, including offer images, product category banners, homepage banners, lookbook images, product images, and the site logo.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/MediaSlotUploader.tsx",
-          "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "frontend/src/pages/admin/AdminLookbook.tsx",
-          "frontend/src/pages/admin/AdminSiteSettings.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/MediaSlotUploader.tsx",
-          "frontend/src/pages/admin/AdminProducts.tsx",
-          "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "frontend/src/pages/admin/AdminLookbook.tsx",
-          "frontend/src/pages/admin/AdminSiteSettings.tsx"
+          "frontend/src/utils/selectSentinels.ts"
         ]
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
-    "caffeine.lock.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/MediaSlotUploader.tsx",
-    "frontend/src/components/admin/DraggableImageList.tsx",
-    "frontend/src/components/admin/HomepageBannersManager.tsx",
-    "frontend/src/components/admin/MultiImageUploader.tsx",
-    "frontend/src/pages/admin/AdminLookbook.tsx",
+    "frontend/src/pages/ProductCatalog.tsx",
     "frontend/src/pages/admin/AdminProducts.tsx",
-    "frontend/src/pages/admin/AdminSiteSettings.tsx",
+    "frontend/src/utils/selectSentinels.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

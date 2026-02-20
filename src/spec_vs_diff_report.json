@@ -1,20 +1,16 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-18T17:10:59.811Z",
-  "summary": "The diff implements drag-and-drop file upload, drag-to-reorder, numbered ordering, and image replacement functionality across the admin panel. All four requirements (REQ-1 through REQ-4) are addressed with new components (DraggableImageList, MultiImageUploader) and updates to existing admin pages (products, lookbook, site settings, homepage banners). The implementation includes visual feedback, validation, and backend persistence.",
+  "generatedAt": "2026-02-18T10:35:53.336Z",
+  "summary": "The diff adds shared Select sentinel utilities to avoid empty-string SelectItem values and updates both ProductCatalog and AdminProducts to sanitize category options and use sentinel conversions, addressing the Shadcn Select runtime crash risk. Based on the provided (truncated) evidence, no explicit requested requirements are clearly missing, and no clearly unrequested features are evidenced in the actual modified/added file list.",
   "missing_requirements": [],
   "hallucinated_features": [],
-  "confidence": 0.92,
+  "confidence": 0.68,
   "changed_files": [
     "frontend-file-summaries.txt",
-    "frontend/src/components/MediaSlotUploader.tsx",
-    "frontend/src/components/admin/DraggableImageList.tsx",
-    "frontend/src/components/admin/HomepageBannersManager.tsx",
-    "frontend/src/components/admin/MultiImageUploader.tsx",
-    "frontend/src/pages/admin/AdminLookbook.tsx",
+    "frontend/src/pages/ProductCatalog.tsx",
     "frontend/src/pages/admin/AdminProducts.tsx",
-    "frontend/src/pages/admin/AdminSiteSettings.tsx",
+    "frontend/src/utils/selectSentinels.ts",
     "project_state.json"
   ]
 }

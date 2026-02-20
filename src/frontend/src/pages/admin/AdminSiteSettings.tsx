@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
+import { Save, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -157,25 +157,28 @@ export default function AdminSiteSettings({ onNavigate }: AdminSiteSettingsProps
                 id="logoAltText"
                 value={logoAltText}
                 onChange={(e) => setLogoAltText(e.target.value)}
-                placeholder="Company logo"
+                placeholder="e.g., Fitting Point Logo"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="logoLink">Link (optional)</Label>
+              <Label htmlFor="logoLink">Logo Link (optional)</Label>
               <Input
                 id="logoLink"
                 value={logoLink}
                 onChange={(e) => setLogoLink(e.target.value)}
-                placeholder="/"
+                placeholder="e.g., / or /home"
               />
               <p className="text-xs text-muted-foreground">
-                Where should the logo link to? Leave empty for homepage.
+                Where should the logo link to? Leave empty to link to homepage.
               </p>
             </div>
 
-            <Button onClick={handleSaveLogo} disabled={updateLogo.isPending}>
-              <Save className="mr-2 h-4 w-4" />
+            <Button
+              onClick={handleSaveLogo}
+              disabled={updateLogo.isPending}
+              className="w-full"
+            >
               {updateLogo.isPending ? 'Saving...' : 'Save Logo'}
             </Button>
           </CardContent>
@@ -184,78 +187,133 @@ export default function AdminSiteSettings({ onNavigate }: AdminSiteSettingsProps
         {/* Homepage Banners */}
         <HomepageBannersManager />
 
-        {/* Site Content */}
+        {/* Theme Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Site Content</CardTitle>
-            <CardDescription>
-              Manage your site's text content and settings
-            </CardDescription>
+            <CardTitle>Theme Settings</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
-              <Input
-                id="companyName"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Your Company Name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Hero Text</Label>
-              <RichTextEditor value={heroText} onChange={setHeroText} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Contact Details</Label>
-              <RichTextEditor value={contactDetails} onChange={setContactDetails} />
-            </div>
-
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Dark Mode</Label>
+                <Label htmlFor="darkMode">Dark Mode</Label>
                 <p className="text-sm text-muted-foreground">
-                  Enable dark mode by default for all users
+                  Enable dark mode as the default theme
                 </p>
               </div>
-              <Switch checked={darkModeEnabled} onCheckedChange={setDarkModeEnabled} />
+              <Switch
+                id="darkMode"
+                checked={darkModeEnabled}
+                onCheckedChange={setDarkModeEnabled}
+              />
             </div>
-
-            <Button onClick={handleSaveContent} disabled={updateSiteContent.isPending}>
-              <Save className="mr-2 h-4 w-4" />
-              {updateSiteContent.isPending ? 'Saving...' : 'Save Content'}
-            </Button>
           </CardContent>
         </Card>
 
+        {/* Hero Text */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Hero Section</CardTitle>
+            <CardDescription>
+              Edit the main hero text displayed on your homepage
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RichTextEditor
+              value={heroText}
+              onChange={setHeroText}
+              placeholder="Enter hero text..."
+            />
+          </CardContent>
+        </Card>
+
+        {/* Contact Details */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact Details</CardTitle>
+            <CardDescription>
+              Edit contact information displayed on your site
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RichTextEditor
+              value={contactDetails}
+              onChange={setContactDetails}
+              placeholder="Enter contact details..."
+            />
+          </CardContent>
+        </Card>
+
+        {/* Company Name */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Company Name</CardTitle>
+            <CardDescription>
+              Your company or brand name
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Input
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Enter company name"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Save Content Button */}
+        <Button
+          onClick={handleSaveContent}
+          disabled={updateSiteContent.isPending}
+          size="lg"
+          className="w-full"
+        >
+          <Save className="mr-2 h-4 w-4" />
+          {updateSiteContent.isPending ? 'Saving...' : 'Save Site Content'}
+        </Button>
+
         {/* Admin Signup Control */}
-        {signupEnabled && (
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Admin Signup Window</CardTitle>
-              <CardDescription>
-                The admin signup window is currently open. Close it to prevent new admin registrations.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Alert>
-                <AlertDescription>
-                  Once closed, this action cannot be undone. Only existing admins will be able to access the admin panel.
-                </AlertDescription>
-              </Alert>
-              <Button
-                variant="destructive"
-                onClick={handleCloseSignup}
-                disabled={closeSignupWindow.isPending}
-                className="mt-4"
-              >
-                {closeSignupWindow.isPending ? 'Closing...' : 'Close Admin Signup Window'}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>Admin Signup Window</CardTitle>
+            <CardDescription>
+              Control whether new users can register as admins
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Current Status</Label>
+                <p className="text-sm text-muted-foreground">
+                  {signupEnabled ? 'Open - New users can register as admins' : 'Closed - Only existing admins can access'}
+                </p>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                signupEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {signupEnabled ? 'Open' : 'Closed'}
+              </div>
+            </div>
+
+            {signupEnabled && (
+              <>
+                <Alert>
+                  <AlertDescription>
+                    The admin signup window is currently open. Any authenticated user can register as an admin.
+                    Once you close it, only existing admins will have access.
+                  </AlertDescription>
+                </Alert>
+                <Button
+                  onClick={handleCloseSignup}
+                  disabled={closeSignupWindow.isPending}
+                  variant="destructive"
+                  className="w-full"
+                >
+                  {closeSignupWindow.isPending ? 'Closing...' : 'Close Admin Signup Window Permanently'}
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );

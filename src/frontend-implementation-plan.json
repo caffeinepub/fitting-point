@@ -1,135 +1,48 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Improve image upload and ordering system",
+  "title": "Fix Shadcn Select crash from empty SelectItem values in catalog/admin product pages",
   "requirements": [
     {
       "id": "REQ-1",
-      "summary": "Implement drag and drop file upload functionality for images throughout the admin panel",
+      "summary": "Remove any SelectItem empty-string values from Product Catalog filters while keeping an explicit “All/no filter” state.",
       "acceptanceCriteria": [
-        "Image upload zones accept dragged files and display visual feedback during drag-over",
-        "Dropped files are validated and uploaded automatically",
-        "Existing click-to-upload functionality remains available"
+        "Visiting the Product Catalog page no longer throws the Select.Item empty-string runtime error.",
+        "Category filter supports an \"All Categories\" option without using an empty string SelectItem value.",
+        "Usage filter supports an \"All\" option without using an empty string SelectItem value.",
+        "Clearing a filter results in the intended unfiltered state in the product grid."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/MediaSlotUploader.tsx",
-          "operation": "modify",
-          "description": "Add drag-and-drop event handlers (onDragEnter, onDragOver, onDragLeave, onDrop) to the existing upload zone. Show visual feedback (border highlight or overlay) during dragOver state. Validate dropped files for image types and size constraints. Preserve existing click-to-upload behavior. Use the blob-storage component's ExternalBlob.fromBytes() to handle uploads with progress tracking via withUploadProgress()."
+          "path": "frontend/src/utils/selectSentinels.ts",
+          "operation": "create",
+          "description": "Introduce shared non-empty sentinel constants/helpers (e.g., for “All”/“no filter” selections) to prevent rendering shadcn-ui SelectItem with an empty-string value. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/admin/AdminProducts.tsx",
+          "path": "frontend/src/pages/ProductCatalog.tsx",
           "operation": "modify",
-          "description": "Update product image upload sections to support drag-and-drop by integrating the enhanced MediaSlotUploader component. Ensure multiple image slots can independently accept dragged files. Verify the blob-storage component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminLookbook.tsx",
-          "operation": "modify",
-          "description": "Update lookbook image upload interface to support drag-and-drop using the enhanced MediaSlotUploader component. Maintain existing progress tracking and error handling. Verify the blob-storage component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "operation": "modify",
-          "description": "Update banner image upload sections to support drag-and-drop by integrating the enhanced MediaSlotUploader component. Ensure drag-and-drop works for both new banner creation and editing existing banners. Verify the blob-storage component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminSiteSettings.tsx",
-          "operation": "modify",
-          "description": "Update logo upload interface to support drag-and-drop by integrating the enhanced MediaSlotUploader component. Maintain existing logo preview and link configuration. Verify the blob-storage component's usage instructions before implementing."
+          "description": "Update Category and Usage shadcn-ui Select usage to (1) replace SelectItem value=\"\" with a non-empty sentinel, (2) map sentinel back to “no filter” in filtering logic, and (3) filter/guard category option values so empty/whitespace category names are never rendered as SelectItems. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-2",
-      "summary": "Add drag-to-reorder functionality for images in admin interfaces",
+      "summary": "Audit admin products and related product flows to ensure no SelectItem renders with an empty-string value, including dynamically generated options.",
       "acceptanceCriteria": [
-        "Images can be reordered by dragging them to new positions",
-        "Visual feedback shows the target drop position during drag",
-        "Reordering persists to the backend when completed"
+        "Admin Products page loads without triggering the Select.Item empty-string runtime error.",
+        "No Select dropdown in admin/product flows renders an item whose value prop is an empty string.",
+        "If backend/category data contains empty-string names, they are not rendered as SelectItems and do not crash the page."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/DraggableImageList.tsx",
-          "operation": "create",
-          "description": "Create a reusable draggable image list component using native HTML5 drag-and-drop APIs. Implement dragStart, dragOver, dragEnter, dragLeave, and drop handlers. Show visual feedback (drop zone indicators, ghost image styling) during drag operations. Accept an array of image items with ExternalBlob references and an onChange callback to report reordered arrays. Support both product images and banner images through generic typing."
-        },
-        {
           "path": "frontend/src/pages/admin/AdminProducts.tsx",
           "operation": "modify",
-          "description": "Replace the static product image display with the DraggableImageList component. Wire the onChange callback to update the product's images array in the form state. Ensure reordered images are saved when the product is updated via adminUpdateProduct mutation."
+          "description": "Audit all shadcn-ui Select/SelectItem usage (product list filters + product create/edit form). Ensure no SelectItem is created with value \"\" by (1) using a non-empty sentinel for any “All/no filter” selection and (2) filtering/mapping dynamically-generated option values (e.g., categories) to exclude empty/whitespace strings so they are never rendered. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
+          "path": "frontend/src/utils/selectSentinels.ts",
           "operation": "modify",
-          "description": "Add a drag-to-reorder interface for homepage banners using the DraggableImageList component. Wire the onChange callback to trigger the updateBannerOrder mutation with the new banner order array. Show visual feedback during drag operations and display success/error messages after reordering."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Implement a numbered order system as an alternative to drag-to-reorder for precise image ordering control",
-      "acceptanceCriteria": [
-        "Each image displays its current position number",
-        "Administrators can edit position numbers directly",
-        "Images automatically reorder when position numbers are changed"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/admin/NumberedImageOrderControls.tsx",
-          "operation": "create",
-          "description": "Create a component that displays numbered order inputs for each image in a list. Show the current position number as an editable input field next to each image thumbnail. Implement onChange handlers that validate numeric input (positive integers only) and trigger reordering logic. Accept an array of images with order metadata and an onChange callback to report the reordered array. Support both product images and banner images through generic typing."
-        },
-        {
-          "path": "frontend/src/components/admin/DraggableImageList.tsx",
-          "operation": "modify",
-          "description": "Add an optional showNumberedControls prop to display position number inputs alongside each image. When a number is changed, automatically reorder the array and call the onChange callback. Ensure numbered controls work independently from drag-and-drop reordering."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminProducts.tsx",
-          "operation": "modify",
-          "description": "Enable the numbered order controls in the DraggableImageList component for product images. Allow administrators to toggle between drag-to-reorder and numbered input modes via a UI control. Ensure both methods trigger the same product update flow."
-        },
-        {
-          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "operation": "modify",
-          "description": "Enable the numbered order controls in the banner ordering interface. Allow administrators to edit banner order numbers directly. Trigger the updateBannerOrder mutation when position numbers are changed. Display validation feedback for invalid or duplicate position numbers."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Enable re-upload and replacement functionality for all existing images and placeholders across the site",
-      "acceptanceCriteria": [
-        "Every image slot in the admin panel shows a replace/re-upload option",
-        "Replacing an image updates the display immediately without requiring page refresh",
-        "Placeholder images can be replaced with actual images using the same interface",
-        "The replacement action preserves all associated metadata (alt text, links, etc.)"
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/components/MediaSlotUploader.tsx",
-          "operation": "modify",
-          "description": "Ensure the component clearly displays a 'Replace' or 'Re-upload' button for existing images (not just a remove option). Update the UI to show the current image with clear affordances for replacement. When a new file is selected or dropped, immediately show the new preview and upload it using ExternalBlob.fromBytes() with progress tracking. Preserve all existing metadata (alt text, links) in the parent component's state during replacement."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminProducts.tsx",
-          "operation": "modify",
-          "description": "Ensure all product image slots support replacement via the enhanced MediaSlotUploader component. When an image is replaced, update the product's images array in the form state immediately. Preserve product metadata (name, description, etc.) when images are replaced. Display success feedback after replacement is complete."
-        },
-        {
-          "path": "frontend/src/components/admin/HomepageBannersManager.tsx",
-          "operation": "modify",
-          "description": "Ensure banner image slots support replacement via the enhanced MediaSlotUploader component. When a banner image is replaced, preserve the banner's title, description, link, and order metadata. Update the display immediately after replacement. Trigger the appropriate backend mutation to persist the change."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminLookbook.tsx",
-          "operation": "modify",
-          "description": "Ensure lookbook image slots support replacement via the enhanced MediaSlotUploader component. When an image is replaced, preserve the lookbook item's description and tagged products. Update the display immediately and persist the change to the backend."
-        },
-        {
-          "path": "frontend/src/pages/admin/AdminSiteSettings.tsx",
-          "operation": "modify",
-          "description": "Ensure the logo upload interface supports replacement via the enhanced MediaSlotUploader component. When the logo is replaced, preserve the altText and link metadata. Update the display immediately and persist the change via the updateLogo mutation. Show success feedback after replacement."
+          "description": "Extend shared helpers as needed to support admin/product Selects (e.g., sanitize option lists and map to/from sentinel values) so future SelectItem generation cannot accidentally emit empty-string values. Verify the component's usage instructions before implementing."
         }
       ]
     }

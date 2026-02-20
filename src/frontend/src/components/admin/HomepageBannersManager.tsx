@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Trash2, Edit } from 'lucide-react';
+import { Plus, Trash2, MoveUp, MoveDown, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import MediaSlotUploader from '../MediaSlotUploader';
-import DraggableImageList from './DraggableImageList';
 import { useGetAllBanners, useAddBanner, useRemoveBanner, useUpdateBannerOrder } from '../../hooks/useQueries';
 import type { BannerImage } from '../../backend';
 import { ExternalBlob } from '../../backend';
@@ -94,24 +93,14 @@ export default function HomepageBannersManager() {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      link: '',
+  const handleMoveUp = async (index: number) => {
+    if (index === 0) return;
+
+    const newOrder = sortedBanners.map((banner, i) => {
+      if (i === index) return [banner.id, BigInt(index - 1)] as [string, bigint];
+      if (i === index - 1) return [banner.id, BigInt(index)] as [string, bigint];
+      return [banner.id, banner.order] as [string, bigint];
     });
-    setBannerImage(undefined);
-    setEditingBanner(null);
-  };
-
-  const bannerItems = sortedBanners.map((banner) => ({
-    id: banner.id,
-    image: banner.image,
-    order: Number(banner.order),
-  }));
-
-  const handleBannerReorder = async (reorderedItems: typeof bannerItems) => {
-    const newOrder = reorderedItems.map((item, index) => [item.id, BigInt(index)] as [string, bigint]);
 
     try {
       await updateBannerOrder.mutateAsync(newOrder);
@@ -122,6 +111,36 @@ export default function HomepageBannersManager() {
         description: parsed.nextSteps,
       });
     }
+  };
+
+  const handleMoveDown = async (index: number) => {
+    if (index === sortedBanners.length - 1) return;
+
+    const newOrder = sortedBanners.map((banner, i) => {
+      if (i === index) return [banner.id, BigInt(index + 1)] as [string, bigint];
+      if (i === index + 1) return [banner.id, BigInt(index)] as [string, bigint];
+      return [banner.id, banner.order] as [string, bigint];
+    });
+
+    try {
+      await updateBannerOrder.mutateAsync(newOrder);
+      toast.success('Banner order updated');
+    } catch (error: any) {
+      const parsed = parseAdminAuthError(error);
+      toast.error(parsed.message, {
+        description: parsed.nextSteps,
+      });
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      link: '',
+    });
+    setBannerImage(undefined);
+    setEditingBanner(null);
   };
 
   return (
@@ -216,49 +235,58 @@ export default function HomepageBannersManager() {
           </div>
         ) : (
           <div className="space-y-4">
-            <DraggableImageList
-              images={bannerItems}
-              onChange={handleBannerReorder}
-              showNumberedControls={true}
-            />
-            <div className="space-y-3 mt-6">
-              {sortedBanners.map((banner) => (
-                <Card key={banner.id} className="overflow-hidden border-gold/20">
-                  <div className="flex gap-4 p-4">
-                    <img
-                      src={banner.image.getDirectURL()}
-                      alt={banner.title}
-                      className="w-32 h-20 object-cover rounded"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate">{banner.title}</h4>
-                      {banner.description && (
-                        <p className="text-sm text-muted-foreground truncate">{banner.description}</p>
-                      )}
-                      {banner.link && (
-                        <p className="text-xs text-muted-foreground mt-1">Link: {banner.link}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(banner)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(banner.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
+            {sortedBanners.map((banner, index) => (
+              <Card key={banner.id} className="overflow-hidden">
+                <div className="flex gap-4 p-4">
+                  <img
+                    src={banner.image.getDirectURL()}
+                    alt={banner.title}
+                    className="w-32 h-20 object-cover rounded"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium truncate">{banner.title}</h4>
+                    {banner.description && (
+                      <p className="text-sm text-muted-foreground truncate">{banner.description}</p>
+                    )}
+                    {banner.link && (
+                      <p className="text-xs text-muted-foreground mt-1">Link: {banner.link}</p>
+                    )}
                   </div>
-                </Card>
-              ))}
-            </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleMoveUp(index)}
+                      disabled={index === 0}
+                    >
+                      <MoveUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === sortedBanners.length - 1}
+                    >
+                      <MoveDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(banner)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(banner.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
         )}
       </CardContent>

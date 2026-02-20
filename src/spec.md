@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Enhance the admin panel's image management system with drag-and-drop upload, reordering capabilities, and comprehensive image replacement functionality.
+**Goal:** Fix the Shadcn Select runtime crash in product catalog and admin product flows caused by `<SelectItem value="">`, while preserving an “All / no filter” state.
 
 **Planned changes:**
-- Add drag-and-drop file upload zones throughout the admin panel for direct image uploads
-- Implement drag-to-reorder functionality for image lists and galleries
-- Add a numbered order system allowing direct position number editing for precise image ordering
-- Enable re-upload/replacement for all existing images including offer images, product category banners, homepage banners, lookbook images, product images, and site logo
-- Maintain existing click-to-upload functionality alongside new drag-and-drop features
+- Replace/remove any `<SelectItem value="">` used in product catalog filters (e.g., Category and Usage) and implement an “All” option using a non-empty value or a sentinel state.
+- Audit admin products and other product-related pages/components that render Shadcn `<SelectItem />` options to ensure no empty-string values are ever rendered (including dynamically-generated items).
+- Add guards to filter out or safely map empty/invalid option values from backend/category data so they do not render as SelectItems or crash pages.
 
-**User-visible outcome:** Administrators can drag files directly into upload zones, reorder images by dragging them or editing position numbers, and replace any existing image or placeholder throughout the site with an improved upload interface.
+**User-visible outcome:** Product Catalog and Admin Products pages load without the SelectItem empty-string error, and filters still support clearing back to an unfiltered “All” state.
